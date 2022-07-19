@@ -46,6 +46,7 @@ class SurfaceMesh:
         self._tail()
 
         gmsh.model.geo.synchronize()
+        gmsh.option.setNumber("Mesh.Smoothing", 100)
 
         self._refine()
 

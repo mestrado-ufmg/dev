@@ -1,9 +1,9 @@
 import sys
-
-
 sys.path.append('./')
 
 import pybird
+
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     
@@ -17,7 +17,15 @@ if __name__ == '__main__':
     model.geo.build()
 
     # Create mesh
-    model.mesh.build(size=0.04, alpha=20, accom_dist=10)
+    model.mesh.build(
+        size=0.06,
+        accom_dist=10,
+        n_head=3,
+        n_wing_le=3,
+        n_wing_te=3,
+        n_tail_le=3,
+        n_tail_te=3,
+    )
 
     # View
     model.view.mesh()
