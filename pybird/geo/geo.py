@@ -15,13 +15,9 @@ class Geo:
 
     def build(self) -> None:
         print('- Building geometry')
-        print('  > Wing')
         self._build_wing()
-        print('  > Body')
         self._build_body()
-        print('  > Head')
         self._build_head()
-        print('  > Tail')
         self._build_tail()
         return
     
