@@ -37,54 +37,6 @@ struct Point cross(struct Point p1,
     return p;
 }
 
-void linear_system_solver(int n,
-                          double **a,
-                          double *b,
-                          double *sol) {
-
-    int i, j, k;
-
-    int max_index = n - 1;
-
-    double mult;
-    double sum;
-
-    double *aux_a = (double*)malloc(n * n * sizeof(double*));
-    double *aux_b = (double*)malloc(n * sizeof(double*));
-
-    // Insert first row on aux_a and aux_b
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
-            aux_a[i * n + j] = a[i][j];
-        }
-        aux_b[i] = b[i];
-    }
-
-    // Gauss elimination
-    for (k = 0; k < n - 1; k++) {
-        for (i = k + 1; i < n; i++) {
-            mult = - aux_a[i * n + k] / aux_a[k * n + k];
-            for (j = k; j < n; j++) {
-                aux_a[i * n + j] = mult * aux_a[k * n + j] + aux_a[i * n + j];
-            }
-            aux_b[i] = mult * aux_b[k] + aux_b[i];
-        }
-    }
-
-    // Solve system
-    sol[max_index] = aux_b[max_index] / aux_a[max_index * n + max_index];
-    for (i = n - 2; i >= 0; i--) {
-        sum = aux_b[i];
-        for (j = i + 1; j < n; j++) {
-            sum -= aux_a[i * n + j] * sol[j];
-        }
-        sol[i] = sum / aux_a[i * n + i];
-    }
-
-    free(aux_a);
-    free(aux_b);
-}
-
 ///----------------------------------------------------------------///
 /// Potential flow
 ///----------------------------------------------------------------///
@@ -212,9 +164,9 @@ void doubletFunc(struct Point p,
 
         double u, v, w;
 
-        double vel1[3];
-        double vel2[3];
-        double vel3[3];
+        double *vel1 = (double*)malloc(3 * sizeof(double*));
+        double *vel2 = (double*)malloc(3 * sizeof(double*));
+        double *vel3 = (double*)malloc(3 * sizeof(double*));
 
         lineFunc(p, p1, p2, vel1);
         lineFunc(p, p2, p3, vel2);
@@ -227,6 +179,10 @@ void doubletFunc(struct Point p,
         vel[0] = u * e1.x + v * e2.x + w * e3.x;
         vel[1] = u * e1.y + v * e2.y + w * e3.y;
         vel[2] = u * e1.z + v * e2.z + w * e3.z;
+
+        free(vel1);
+        free(vel2);
+        free(vel3);
 
     }
 }
@@ -247,42 +203,18 @@ void solve(int n,
            double *e3,
            double *freestream,
            double *sigma,
-           double *doublet,
-           double *cp,
-           double *velNorm,
-           double *velx,
-           double *vely,
-           double *velz) {
+           double *matrix,
+           double *array,
+           double *matrixVelx,
+           double *matrixVely,
+           double *matrixVelz,
+           double *arrayVel) {
     
     ///---------------------------------------///
     /// Parameters
-
+    
     // Loops
     int i, j;
-    
-    // Initial transpiration
-    double *transpiration = (double*)malloc(n * sizeof(double*));
-
-    // Linear system parameters
-    double **matrix = (double**)malloc(n * sizeof(double*));
-
-    double *array = (double*)malloc(n * sizeof(double*));
-
-    double **matrixVelx = (double**)malloc(n * sizeof(double*));
-    double **matrixVely = (double**)malloc(n * sizeof(double*));
-    double **matrixVelz = (double**)malloc(n * sizeof(double*));
-
-    double **arrayVel = (double**)malloc(n * sizeof(double*));
-
-    for (i = 0; i < n; i++) {
-        matrix[i] = (double*)malloc(n * sizeof(double));
-
-        matrixVelx[i] = (double*)malloc(n * sizeof(double));
-        matrixVely[i] = (double*)malloc(n * sizeof(double));
-        matrixVelz[i] = (double*)malloc(n * sizeof(double));
-
-        arrayVel[i] = (double*)malloc(3 * sizeof(double));
-    }
 
     // Point
     int i3D1, i3D2, i3D3, j3D1, j3D2, j3D3;
@@ -303,9 +235,7 @@ void solve(int n,
     // Velocities
     double *sourceVel = (double*)malloc(3 * sizeof(double));
     double *doubletVel = (double*)malloc(3 * sizeof(double));
-    double velSquare;
-    double freestreamSquare = freestream[0] * freestream[0] + freestream[1] * freestream[1] + freestream[2] * freestream[2];
-
+    
     ///---------------------------------------///
     /// Linear system
 
@@ -318,7 +248,10 @@ void solve(int n,
 
         e3iPoint.x = e3[i3D1]; e3iPoint.y = e3[i3D2]; e3iPoint.z = e3[i3D3];
 
-        array[i] = 0.0;
+        array[i] = 0;
+        arrayVel[i * 3] = 0;
+        arrayVel[i * 3 + 1] = 0;
+        arrayVel[i * 3 + 2] = 0;
         
         // Surface
         // Effect of j on i
@@ -351,49 +284,26 @@ void solve(int n,
             sourceFunc(pLocal, p1Local, p2Local, p3Local, e1jPoint, e2jPoint, e3jPoint, facesAreas[j], facesMaxDistance[j], sourceVel);
             doubletFunc(pLocal, p1Local, p2Local, p3Local, e1jPoint, e2jPoint, e3jPoint, facesAreas[j], facesMaxDistance[j], doubletVel);
 
-            matrix[i][j] = doubletVel[0] * e3iPoint.x + doubletVel[1] * e3iPoint.y + doubletVel[2] * e3iPoint.z;
+            matrix[i * n + j] = doubletVel[0] * e3iPoint.x + doubletVel[1] * e3iPoint.y + doubletVel[2] * e3iPoint.z;
             array[i] = array[i] - sigma[j] * (sourceVel[0] * e3iPoint.x + sourceVel[1] * e3iPoint.y + sourceVel[2] * e3iPoint.z);
 
-            matrixVelx[i][j] = doubletVel[0];
-            matrixVely[i][j] = doubletVel[1];
-            matrixVelz[i][j] = doubletVel[2];
+            matrixVelx[i * n + j] = doubletVel[0];
+            matrixVely[i * n + j] = doubletVel[1];
+            matrixVelz[i * n + j] = doubletVel[2];
 
-            arrayVel[i][0] = arrayVel[i][0] + sigma[j] * sourceVel[0];
-            arrayVel[i][1] = arrayVel[i][1] + sigma[j] * sourceVel[1];
-            arrayVel[i][2] = arrayVel[i][2] + sigma[j] * sourceVel[2];
+            arrayVel[i * 3] = arrayVel[i * 3] + sigma[j] * sourceVel[0];
+            arrayVel[i * 3 + 1] = arrayVel[i * 3 + 1] + sigma[j] * sourceVel[1];
+            arrayVel[i * 3 + 2] = arrayVel[i * 3 + 2] + sigma[j] * sourceVel[2];
 
         }
 
-        array[i] = - (freestream[0] * e3[i3D1] + freestream[1] * e3[i3D2] + freestream[2] * e3[i3D3]) + transpiration[i];
+        array[i] = array[i] - (freestream[0] * e3iPoint.x + freestream[1] * e3iPoint.y + freestream[2] * e3iPoint.z);
 
-        arrayVel[i][0] = arrayVel[i][0] + freestream[0];
-        arrayVel[i][1] = arrayVel[i][1] + freestream[1];
-        arrayVel[i][2] = arrayVel[i][2] + freestream[2];
+        arrayVel[i * 3] = arrayVel[i * 3] + freestream[0];
+        arrayVel[i * 3 + 1] = arrayVel[i * 3 + 1] + freestream[1];
+        arrayVel[i * 3 + 2] = arrayVel[i * 3 + 2] + freestream[2];
 
         // Wake
 
     }
-
-    // Solve Linear system
-    linear_system_solver(n, matrix, array, doublet);
-
-    ///---------------------------------------///
-    /// Calculate parameters
-    for (i = 0; i < n; i++) {
-
-        velx[i] = arrayVel[i][0];
-        vely[i] = arrayVel[i][1];
-        velz[i] = arrayVel[i][2];
-
-        for (j = 0; j < n; j++) {
-            velx[i] = velx[i] + matrixVelx[i][j] * doublet[j];
-            vely[i] = vely[i] + matrixVely[i][j] * doublet[j];
-            velz[i] = velz[i] + matrixVelz[i][j] * doublet[j];
-        }
-
-        velSquare = velx[i] * velx[i] + vely[i] * vely[i] + velz[i] * velz[i];
-        velNorm[i] = sqrt(velSquare);
-        cp[i] = 1 - velSquare / freestreamSquare;
-    }
-
 }

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 void convert(int lines, int rows, double *in, double out[lines][rows]) {
 
@@ -92,8 +93,12 @@ void solve_system(int n, double **a, double *b, double *sol) {
     double mult;
     double sum;
 
-    double aux_a[n][n];
-    double aux_b[n];
+    double **aux_a = (double**)malloc(n * sizeof(double*));
+    for (i = 0; i < n; i++) {
+        aux_a[i] = (double*)malloc(n * sizeof(double));
+    }
+
+    double *aux_b = (double*)malloc(n * sizeof(double*));
 
     // Insert first row on aux_a and aux_b
     for (i = 0; i < n; i++) {
@@ -125,17 +130,17 @@ void solve_system(int n, double **a, double *b, double *sol) {
     }
 }
 
-void solve_system_1D(int n, float *a, float *b, float *sol) {
+void solve_system_1D(int n, double *a, double *b, double *sol) {
 
     int i, j, k;
 
     int max_index = n - 1;
 
-    float mult;
-    float sum;
+    double mult;
+    double sum;
 
-    float aux_a[n * n];
-    float aux_b[n];
+    double *aux_a = (double*)malloc(n * n * sizeof(double*));
+    double *aux_b = (double*)malloc(n * sizeof(double*));
 
     // Insert first row on aux_a and aux_b
     for (i = 0; i < n; i++) {

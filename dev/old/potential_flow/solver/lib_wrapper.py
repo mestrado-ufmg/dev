@@ -192,7 +192,7 @@ def solve(a: ndarray, b: ndarray, type: int = 1) -> ndarray:
     
     elif type == 2:
 
-        ND_POINTER_1 = ctypeslib.ndpointer(dtype=float32, ndim=1, flags="C")
+        ND_POINTER_1 = ctypeslib.ndpointer(dtype=float64, ndim=1, flags="C")
 
         # Define the return type of the C function
         lib.solve_system_1D.restype = None
@@ -208,8 +208,8 @@ def solve(a: ndarray, b: ndarray, type: int = 1) -> ndarray:
         n = len(b)
 
         # a = a.reshape(-1)
-        out = empty(b.shape).astype(float32)
+        out = empty(b.shape).astype(float64)
 
-        lib.solve_system_1D(n, a.astype(float32), b.astype(float32), out)
+        lib.solve_system_1D(n, a.astype(float64), b.astype(float64), out)
 
         return out

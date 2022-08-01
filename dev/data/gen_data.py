@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     # Create mesh
     model.mesh.build(
-        size=0.03,
+        size=0.01,
         accom_dist=10,
         n_head=3,
         n_wing_le=3,
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         n_tail_te=2,
     )
 
-    path = './data/mesh/'
+    path = './data/mesh2/'
 
     # Save
     np.savetxt(path + 'faces.txt', model.mesh.faces)

@@ -22,31 +22,23 @@ if __name__ == '__main__':
     sigma = np.loadtxt(path + 'sigma.txt')
 
     # Call function
-    out = solve(facesAreas,
-                facesMaxDistance,
-                facesCenter,
-                controlPoints,
-                p1,
-                p2,
-                p3,
-                e1,
-                e2,
-                e3,
-                freestream,
-                sigma)
-
-    n = facesAreas.shape[0]
-
-    transpiration = out.velx * e3[:, 0] + out.vely * e3[:, 1] + out.velz * e3[:, 2]
-
-    gen('first',
+    doublet, cp, velNorm, velx, vely, velz, transpiration = solve(facesAreas,
+                                                                  facesMaxDistance,
+                                                                  facesCenter,
+                                                                  controlPoints,
+                                                                  p1, p2, p3,
+                                                                  e1, e2, e3,
+                                                                  freestream,
+                                                                  sigma)
+    
+    gen('secon',
         './data/mesh/',
         './data/vtk/',
         sigma,
-        out.doublet,
-        out.velNorm,
-        out.velx,
-        out.vely,
-        out.velz,
-        out.cp,
+        doublet,
+        velNorm,
+        velx,
+        vely,
+        velz,
+        cp,
         transpiration)
