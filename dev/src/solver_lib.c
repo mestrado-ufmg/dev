@@ -203,6 +203,21 @@ void solve(int n,
            double *e3,
            double *freestream,
            double *sigma,
+           int nSpanLeftWing,
+           int nWakeLeftWing,
+           int *leftWingGrid,
+           double *leftWingVertices,
+           int *leftWingFaces,
+           int nSpanRightWing,
+           int nWakeRightWing,
+           int *rightWingGrid,
+           double *rightWingVertices,
+           int *rightWingFaces,
+           int nSpanTail,
+           int nWakeTail,
+           int *tailGrid,
+           double *tailVertices,
+           int *tailFaces,
            double *matrix,
            double *array,
            double *matrixVelx,
@@ -214,12 +229,15 @@ void solve(int n,
     /// Parameters
     
     // Loops
-    int i, j;
+    int i, j, k, l;
 
     // Point
     int i3D1, i3D2, i3D3, j3D1, j3D2, j3D3;
     int j2D1, j2D2;
+    int indexLine1, indexLine2;
     struct Point p;
+    struct Point p1Line;
+    struct Point p2Line;
     struct Point pLocal;
     struct Point p1Local; p1Local.z = 0.0;
     struct Point p2Local; p2Local.z = 0.0;
@@ -235,6 +253,7 @@ void solve(int n,
     // Velocities
     double *sourceVel = (double*)malloc(3 * sizeof(double));
     double *doubletVel = (double*)malloc(3 * sizeof(double));
+    double *lineVel = (double*)malloc(3 * sizeof(double));
     
     ///---------------------------------------///
     /// Linear system
@@ -304,6 +323,162 @@ void solve(int n,
         arrayVel[i * 3 + 2] = arrayVel[i * 3 + 2] + freestream[2];
 
         // Wake
+        p.x = controlPoints[i3D1];
+        p.y = controlPoints[i3D2];
+        p.z = controlPoints[i3D3];
+
+        // Left wing
+        for (k = 0; k < nSpanLeftWing; k ++) {
+
+            for (l = 0; l < nWakeLeftWing - 1; l ++) {
+                
+                indexLine1 = leftWingGrid[k * nWakeLeftWing + l] * 3;
+                p1Line.x = leftWingVertices[indexLine1];
+                p1Line.y = leftWingVertices[indexLine1 + 1];
+                p1Line.z = leftWingVertices[indexLine1 + 2];
+
+                indexLine2 = leftWingGrid[k * nWakeLeftWing + l + 1] * 3;
+                p2Line.x = leftWingVertices[indexLine2];
+                p2Line.y = leftWingVertices[indexLine2 + 1];
+                p2Line.z = leftWingVertices[indexLine2 + 2];
+
+                lineFunc(p, p1Line, p2Line, lineVel);
+
+                if (k == 0) {
+                    matrix[i * n + leftWingFaces[k * 2]] = matrix[i * n + leftWingFaces[k * 2]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + leftWingFaces[k * 2 + 1]] = matrix[i * n + leftWingFaces[k * 2 + 1]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                } else if (k == nSpanLeftWing - 1) {
+                    matrix[i * n + leftWingFaces[(k - 1) * 2]] = matrix[i * n + leftWingFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + leftWingFaces[(k - 1) * 2 + 1]] = matrix[i * n + leftWingFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                } else {
+                    matrix[i * n + leftWingFaces[(k - 1) * 2]] = matrix[i * n + leftWingFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + leftWingFaces[(k - 1) * 2 + 1]] = matrix[i * n + leftWingFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                    matrix[i * n + leftWingFaces[k * 2]] = matrix[i * n + leftWingFaces[k * 2]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + leftWingFaces[k * 2 + 1]] = matrix[i * n + leftWingFaces[k * 2 + 1]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                    indexLine1 = leftWingGrid[(k - 1) * nWakeLeftWing] * 3;
+                    p1Line.x = leftWingVertices[indexLine1];
+                    p1Line.y = leftWingVertices[indexLine1 + 1];
+                    p1Line.z = leftWingVertices[indexLine1 + 2];
+
+                    indexLine2 = leftWingGrid[k * nWakeLeftWing] * 3;
+                    p2Line.x = leftWingVertices[indexLine2];
+                    p2Line.y = leftWingVertices[indexLine2 + 1];
+                    p2Line.z = leftWingVertices[indexLine2 + 2];
+
+                    lineFunc(p, p1Line, p2Line, lineVel);
+
+                    matrix[i * n + leftWingFaces[(k - 1) * 2]] = matrix[i * n + leftWingFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + leftWingFaces[(k - 1) * 2 + 1]] = matrix[i * n + leftWingFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                }
+
+            }
+
+        }
+
+        // Right wing
+        for (k = 0; k < nSpanRightWing; k ++) {
+
+            for (l = 0; l < nWakeRightWing - 1; l ++) {
+                
+                indexLine1 = rightWingGrid[k * nWakeRightWing + l] * 3;
+                p1Line.x = rightWingVertices[indexLine1];
+                p1Line.y = rightWingVertices[indexLine1 + 1];
+                p1Line.z = rightWingVertices[indexLine1 + 2];
+
+                indexLine2 = rightWingGrid[k * nWakeRightWing + l + 1] * 3;
+                p2Line.x = rightWingVertices[indexLine2];
+                p2Line.y = rightWingVertices[indexLine2 + 1];
+                p2Line.z = rightWingVertices[indexLine2 + 2];
+
+                lineFunc(p, p1Line, p2Line, lineVel);
+
+                if (k == 0) {
+                    matrix[i * n + rightWingFaces[k * 2]] = matrix[i * n + rightWingFaces[k * 2]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + rightWingFaces[k * 2 + 1]] = matrix[i * n + rightWingFaces[k * 2 + 1]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                } else if (k == nSpanRightWing - 1) {
+                    matrix[i * n + rightWingFaces[(k - 1) * 2]] = matrix[i * n + rightWingFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + rightWingFaces[(k - 1) * 2 + 1]] = matrix[i * n + rightWingFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                } else {
+                    matrix[i * n + rightWingFaces[(k - 1) * 2]] = matrix[i * n + rightWingFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + rightWingFaces[(k - 1) * 2 + 1]] = matrix[i * n + rightWingFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                    matrix[i * n + rightWingFaces[k * 2]] = matrix[i * n + rightWingFaces[k * 2]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + rightWingFaces[k * 2 + 1]] = matrix[i * n + rightWingFaces[k * 2 + 1]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                    indexLine1 = rightWingGrid[(k - 1) * nWakeRightWing] * 3;
+                    p1Line.x = rightWingVertices[indexLine1];
+                    p1Line.y = rightWingVertices[indexLine1 + 1];
+                    p1Line.z = rightWingVertices[indexLine1 + 2];
+
+                    indexLine2 = rightWingGrid[k * nWakeRightWing] * 3;
+                    p2Line.x = rightWingVertices[indexLine2];
+                    p2Line.y = rightWingVertices[indexLine2 + 1];
+                    p2Line.z = rightWingVertices[indexLine2 + 2];
+
+                    lineFunc(p, p1Line, p2Line, lineVel);
+
+                    matrix[i * n + rightWingFaces[(k - 1) * 2]] = matrix[i * n + rightWingFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + rightWingFaces[(k - 1) * 2 + 1]] = matrix[i * n + rightWingFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                }
+
+            }
+
+        }
+
+        // Tail
+        for (k = 0; k < nSpanTail; k ++) {
+
+            for (l = 0; l < nWakeTail - 1; l ++) {
+                
+                indexLine1 = tailGrid[k * nWakeTail + l] * 3;
+                p1Line.x = tailVertices[indexLine1];
+                p1Line.y = tailVertices[indexLine1 + 1];
+                p1Line.z = tailVertices[indexLine1 + 2];
+
+                indexLine2 = tailGrid[k * nWakeTail + l + 1] * 3;
+                p2Line.x = tailVertices[indexLine2];
+                p2Line.y = tailVertices[indexLine2 + 1];
+                p2Line.z = tailVertices[indexLine2 + 2];
+
+                lineFunc(p, p1Line, p2Line, lineVel);
+
+                if (k == 0) {
+                    matrix[i * n + tailFaces[k * 2]] = matrix[i * n + tailFaces[k * 2]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + tailFaces[k * 2 + 1]] = matrix[i * n + tailFaces[k * 2 + 1]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                } else if (k == nSpanTail - 1) {
+                    matrix[i * n + tailFaces[(k - 1) * 2]] = matrix[i * n + tailFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + tailFaces[(k - 1) * 2 + 1]] = matrix[i * n + tailFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                } else {
+                    matrix[i * n + tailFaces[(k - 1) * 2]] = matrix[i * n + tailFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + tailFaces[(k - 1) * 2 + 1]] = matrix[i * n + tailFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                    matrix[i * n + tailFaces[k * 2]] = matrix[i * n + tailFaces[k * 2]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + tailFaces[k * 2 + 1]] = matrix[i * n + tailFaces[k * 2 + 1]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                    indexLine1 = tailGrid[(k - 1) * nWakeTail] * 3;
+                    p1Line.x = tailVertices[indexLine1];
+                    p1Line.y = tailVertices[indexLine1 + 1];
+                    p1Line.z = tailVertices[indexLine1 + 2];
+
+                    indexLine2 = tailGrid[k * nWakeTail] * 3;
+                    p2Line.x = tailVertices[indexLine2];
+                    p2Line.y = tailVertices[indexLine2 + 1];
+                    p2Line.z = tailVertices[indexLine2 + 2];
+
+                    lineFunc(p, p1Line, p2Line, lineVel);
+
+                    matrix[i * n + tailFaces[(k - 1) * 2]] = matrix[i * n + tailFaces[(k - 1) * 2]] + (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+                    matrix[i * n + tailFaces[(k - 1) * 2 + 1]] = matrix[i * n + tailFaces[(k - 1) * 2 + 1]] - (e3iPoint.x * lineVel[0] + e3iPoint.y * lineVel[1] + e3iPoint.z * lineVel[2]);
+
+                }
+
+            }
+
+        }
 
     }
 }

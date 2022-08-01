@@ -52,7 +52,7 @@ def _find_vertices(vertices: ndarray, edges: ndarray, faces: ndarray, func: Call
         # Save the vertices, edge and face
         pTag = pNewTag
         verticesOut.append(pNewTag)
-        facesOut.append([facesTag[0, 0], facesTag[1, 0]])
+        facesOut.append([facesTag[0, 0], facesTag[1, 0]] if facesTag[0, 0] < facesTag[1, 0] else [facesTag[1, 0], facesTag[0, 0]])
 
         # Check if new point is equal pFinal
         if allclose(vertices[pNewTag, :], pFinal):

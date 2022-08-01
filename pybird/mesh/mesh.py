@@ -53,23 +53,22 @@ class Mesh:
                     n_head: float = None,
                     n_tail_le: float = None,
                     n_tail_te: float = None,
+                    n_body: float = None,
                     wake_dist: float = None,
                     accom_dist: float = None,
                     alpha: float = None,
                     beta: float = None,) -> None:
+                    
         print('- Building mesh')
-        t1 = time()
-        self._surface = SurfaceMesh(self._geo, size, n_wing_le, n_wing_te, n_head, n_tail_le, n_tail_te)
+
+        self._surface = SurfaceMesh(self._geo, size, n_wing_le, n_wing_te, n_head, n_tail_le, n_tail_te, n_body)
         self.vertices, self.edges, self.faces, self.leftWingFirstSectionFacesTags, self.leftWingSecondSectionFacesTags, self.leftWingThirdSectionFacesTags, self.rightWingFirstSectionFacesTags, self.rightWingSecondSectionFacesTags, self.rightWingThirdSectionFacesTags, self.bodyFacesTags, self.headFacesTags, self.tailFacesTags = self._surface.build()
-        t2 = time()
-        print('    -> {} - surface mesh'.format(t2 - t1))
+
         leftWingWake, rightWingWake, tailWake = build_wake(self.vertices, self.edges, self.faces, self._geo, wake_dist, accom_dist, alpha, beta)
         self.wake = _Wake(leftWingWake, rightWingWake, tailWake)
-        t3 = time()
-        print('    -> {} - wake mesh'.format(t3 - t2))
+
         self._posproc()
-        t4 = time()
-        print('    -> {} - posproc'.format(t4 - t3))
+        
         return
     
     def _posproc(self) -> None:

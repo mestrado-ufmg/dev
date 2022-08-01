@@ -5,7 +5,7 @@ from gen_vtk import gen
 
 if __name__ == '__main__':
 
-    path = './data/mesh/'
+    path = './data/mesh2/'
 
     # Load
     facesAreas = np.loadtxt(path + 'facesAreas.txt')
@@ -20,6 +20,15 @@ if __name__ == '__main__':
     e3 = np.loadtxt(path + 'e3.txt')
     freestream = np.loadtxt(path + 'freestream.txt')
     sigma = np.loadtxt(path + 'sigma.txt')
+    leftWingGrid = np.loadtxt(path + 'leftWingGrid.txt', dtype=np.int32)
+    leftWingVertices = np.loadtxt(path + 'leftWingVertices.txt')
+    leftWingFaces = np.loadtxt(path + 'leftWingFaces.txt', dtype=np.int32)
+    rightWingGrid = np.loadtxt(path + 'rightWingGrid.txt', dtype=np.int32)
+    rightWingVertices = np.loadtxt(path + 'rightWingVertices.txt')
+    rightWingFaces = np.loadtxt(path + 'rightWingFaces.txt', dtype=np.int32)
+    tailGrid = np.loadtxt(path + 'tailGrid.txt', dtype=np.int32)
+    tailVertices = np.loadtxt(path + 'tailVertices.txt')
+    tailFaces = np.loadtxt(path + 'tailFaces.txt', dtype=np.int32)
 
     # Call function
     doublet, cp, velNorm, velx, vely, velz, transpiration = solve(facesAreas,
@@ -29,10 +38,13 @@ if __name__ == '__main__':
                                                                   p1, p2, p3,
                                                                   e1, e2, e3,
                                                                   freestream,
-                                                                  sigma)
+                                                                  sigma,
+                                                                  leftWingGrid, leftWingVertices, leftWingFaces,
+                                                                  rightWingGrid, rightWingVertices, rightWingFaces,
+                                                                  tailGrid, tailVertices, tailFaces)
     
-    gen('secon',
-        './data/mesh/',
+    gen('second',
+        './data/mesh2/',
         './data/vtk/',
         sigma,
         doublet,

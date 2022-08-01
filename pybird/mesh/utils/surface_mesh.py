@@ -14,7 +14,8 @@ class SurfaceMesh:
                        n_wing_te: float = None,
                        n_head: float = None,
                        n_tail_le: float = None,
-                       n_tail_te: float = None) -> None:
+                       n_tail_te: float = None,
+                       n_body: float = None) -> None:
         
         size = size if size is not None else (geo.data.wing.h1 + geo.data.wing.h7) / 10
         n_wing_le = n_wing_le if n_wing_le is not None else 3
@@ -22,6 +23,7 @@ class SurfaceMesh:
         n_head = n_head if n_head is not None else 3
         n_tail_le = n_tail_le if n_tail_le is not None else 3
         n_tail_te = n_tail_te if n_tail_te is not None else 2
+        n_body = n_body if n_body is not None else 2
 
         self.geo = geo
         self.cellSize = size
@@ -30,6 +32,7 @@ class SurfaceMesh:
         self.headCellSize = self.cellSize / n_head
         self.tailLEcellSize = self.cellSize / n_tail_le
         self.tailTEcellSize = self.cellSize / n_tail_te
+        self.bodyCellSize = self.cellSize / n_body
         return
     
     def build(self) -> None:
@@ -1075,10 +1078,25 @@ class SurfaceMesh:
         gmsh.model.mesh.field.setNumber(10, "DistMin", tailMinDist)
         gmsh.model.mesh.field.setNumber(10, "DistMax", tailMaxDist)
 
-        gmsh.model.mesh.field.add("Min", 11)
-        gmsh.model.mesh.field.setNumbers(11, "FieldsList", [2, 4, 6, 8, 10])
+        # Body
+        bodyMinDist = self.geo.data.wing.l0 * 0.5
+        bodyMaxDist = self.geo.data.wing.l0 * 1
 
-        gmsh.model.mesh.field.setAsBackgroundMesh(11)
+        gmsh.model.mesh.field.add("Distance", 11)
+        gmsh.model.mesh.field.setNumbers(11, "CurvesList", [self.curve13e, self.curve14e, self.curve15e, self.curve16e, self.curve13d, self.curve14d, self.curve15d, self.curve16d])
+        gmsh.model.mesh.field.setNumber(11, "NumPointsPerCurve", 200)
+
+        gmsh.model.mesh.field.add("Threshold", 12)
+        gmsh.model.mesh.field.setNumber(12, "InField", 11)
+        gmsh.model.mesh.field.setNumber(12, "SizeMin", self.bodyCellSize)
+        gmsh.model.mesh.field.setNumber(12, "SizeMax", self.cellSize)
+        gmsh.model.mesh.field.setNumber(12, "DistMin", bodyMinDist)
+        gmsh.model.mesh.field.setNumber(12, "DistMax", bodyMaxDist)
+
+        gmsh.model.mesh.field.add("Min", 13)
+        gmsh.model.mesh.field.setNumbers(13, "FieldsList", [2, 4, 6, 8, 10, 12])
+
+        gmsh.model.mesh.field.setAsBackgroundMesh(13)
 
         gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
         gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
