@@ -1,6 +1,6 @@
 {
     "files.associations": {
-        "cmath": "c",
-        "complex": "c"
+        "variant": "c",
+        "math.h": "c"
     }
 }

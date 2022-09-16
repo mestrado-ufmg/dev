@@ -1,17 +1,17 @@
 import numpy as np
 import vtk
 
-def gen(name: str,
-        path: str,
-        save_in: str,
-        sigma: np.ndarray,
-        doublet: np.ndarray,
-        vel: np.ndarray,
-        velx: np.ndarray,
-        vely: np.ndarray,
-        velz: np.ndarray,
-        cp: np.ndarray,
-        transpiration: np.ndarray):
+def genVTK(name: str,
+           path: str,
+           save_in: str,
+           sigma: np.ndarray,
+           doublet: np.ndarray,
+           vel: np.ndarray,
+           velx: np.ndarray,
+           vely: np.ndarray,
+           velz: np.ndarray,
+           cp: np.ndarray,
+           transpiration: np.ndarray):
 
     vertices = np.loadtxt(path + 'vertices.txt')
     faces = np.loadtxt(path + 'faces.txt').astype(np.int64)
@@ -127,5 +127,5 @@ def gen(name: str,
     writer.SetFileName(save_in + '{}.vtp'.format(name))
     writer.SetInputData(pd)
     writer.Write()
-
+    
     return
