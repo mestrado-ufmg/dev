@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "potentialflow.h": "c",
+        "boundarylayer.h": "c",
+        "potentialflow.c": "cpp",
+        "posproc.h": "c",
+        "structs.h": "c",
+        "stdio.h": "c",
+        "data.h": "c",
+        "getlinearsystemimp.c": "cpp",
+        "cmath": "cpp",
+        "complex": "cpp",
+        "random": "c",
+        "linearsystemsolver.h": "c",
+        "custommath.h": "c"
+    }
+}

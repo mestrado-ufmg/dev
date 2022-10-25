@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "variant": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "stddef.h": "c",
+        "stdlib.h": "c",
+        "random": "c",
+        "ratio": "c"
     }
 }

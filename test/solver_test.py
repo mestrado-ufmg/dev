@@ -23,10 +23,16 @@ if __name__ == '__main__':
         n_wing_te=4,
         n_tail_le=3,
         n_tail_te=3,
+        alpha=5.,
     )
 
     # Solve
-    model.solver.solve()
+    model.solver.solve(alpha=5.)
+
+    # Posproc
+    model.posproc.forcesMoments()
+    print('Force Coeff.: {}'.format(model.posproc.CF))
+    print('Moment Coeff.: {}'.format(model.posproc.CM))
 
     # View
-    model.view.paraview()
+    model.view.paraview('./data/solve')

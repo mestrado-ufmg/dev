@@ -1,4 +1,3 @@
-from math import acos
 from typing import Callable, List
 from numpy import argwhere, array, asarray, cross, deg2rad, dot, ndarray, allclose, zeros
 from scipy.spatial.transform import Rotation as R

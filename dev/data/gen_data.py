@@ -20,15 +20,13 @@ if __name__ == '__main__':
     model.mesh.build(
         size=0.01,
         accom_dist=10,
-        n_head=2,
-        n_wing_le=2,
-        n_wing_te=2,
-        n_tail_le=2,
-        n_tail_te=2,
+        n_head=3,
+        n_wing_le=4,
+        n_wing_te=3,
+        n_tail_le=4,
+        n_tail_te=3,
         n_body=2,
     )
-
-    model.view.paraview()
 
     path = './data/mesh3/'
 

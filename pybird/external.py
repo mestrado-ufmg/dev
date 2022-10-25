@@ -6,6 +6,7 @@ from pybird.models.head_model import HeadModel
 from pybird.models.tail_model import TailModel
 from pybird.geo.geo import Geo
 from pybird.mesh.mesh import Mesh
+from pybird.posproc.posproc import Posproc
 from pybird.solver.solver import Solver
 from pybird.view.view import View
 
@@ -21,6 +22,7 @@ class model:
         self.mesh = Mesh(self.geo)
         self.solver = Solver(self.mesh)
         self.view = View(self.mesh, self.solver, self.data.name)
+        self.posproc = Posproc(self.mesh, self.solver)
         return
 
     def save(self, file: str) -> None:

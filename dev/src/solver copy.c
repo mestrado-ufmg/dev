@@ -7,182 +7,31 @@
     CONSTANTS
 #####################################################
 */
-const double ZERO_ERROR = 1e-8;
+const double ZERO_ERROR = 1e-12;
 const double PI = 3.14159265359;
 const double FACTOR = 1 / (4 * PI);
 const int LAYERS = 300;
-const double CTAU_CRIT = 1e-1;
-const int LAMINAR_FLOW = 0;
 
 /*
 #####################################################
     STRUCTS
 #####################################################
 */
-struct Point
-{
+struct Point {
     double x;
     double y;
     double z;
 };
 
-struct VerticeConnection
-{
+struct VerticeConnection {
     int n;
     double *coeffs;
     int *faces;
 };
 
-struct FacesConnection
-{
+struct FacesConnection {
     int n;
     int *faces;
-};
-
-struct ProfileParameters
-{
-    int n;
-    double *eta;
-    double *U;
-    double *W;
-    double *dU_deta;
-    double *dW_deta;
-    double *S;
-    double *T;
-    double *R;
-};
-
-struct FreestreamParameters
-{
-    double velocity;
-    double density;
-    double viscosity;
-    double mach;
-};
-
-struct IntegralThicknessParameters
-{
-    double delta_1_ast;
-    double delta_2_ast;
-    double phi_11;
-    double phi_12;
-    double phi_21;
-    double phi_22;
-    double phi_1_ast;
-    double phi_2_ast;
-    double delta_1_line;
-    double delta_2_line;
-    double delta_q;
-    double delta_q_o;
-    double theta_1_o;
-    double theta_2_o;
-    double delta_1_o;
-    double delta_2_o;
-    double C_D;
-    double C_D_x;
-    double C_D_o;
-    double C_f_1;
-    double C_f_2;
-    double theta_11;
-    double theta_22;
-};
-
-struct IntegralDefectParameters
-{
-    double M_x;
-    double M_y;
-    double J_xx;
-    double J_xy;
-    double J_yx;
-    double J_yy;
-    double E_x;
-    double E_y;
-    double K_o_x;
-    double K_o_y;
-    double Q_x;
-    double Q_y;
-    double Q_o_x;
-    double Q_o_y;
-    double tau_w_x;
-    double tau_w_y;
-    double D;
-    double D_x;
-    double D_o;
-    double K_tau_xx;
-    double K_tau_xy;
-    double K_tau_yx;
-    double K_tau_yy;
-    double S_tau_x;
-    double S_tau_y;
-};
-
-struct EquationsParameters
-{
-    double M_x;
-    double M_y;
-    double J_xx;
-    double J_xy;
-    double J_yx;
-    double J_yy;
-    double E_x;
-    double E_y;
-    double K_o_x;
-    double K_o_y;
-    double Q_x;
-    double Q_y;
-    double Q_o_x;
-    double Q_o_y;
-    double tau_w_x;
-    double tau_w_y;
-    double D;
-    double D_x;
-    double D_o;
-    double K_tau_xx;
-    double K_tau_xy;
-    double K_tau_yx;
-    double K_tau_yy;
-    double S_tau_x;
-    double S_tau_y;
-    double grad_q2_x, grad_q2_y;
-    double grad_phi_x, grad_phi_y;
-    double div_M;
-    double div_J_x;
-    double div_J_y;
-    double div_E;
-    double div_K_o;
-    double div_K_tau_x;
-    double div_K_tau_y;
-    double vel;
-    double density;
-};
-
-struct DivergentParameters
-{
-    double M;
-    double J_x;
-    double J_y;
-    double E;
-    double K_o;
-    double K_tau_x;
-    double K_tau_y;
-};
-
-struct GradientParameters
-{
-    double q2_x;
-    double q2_y;
-    double phi_x;
-    double phi_y;
-};
-
-struct BoundaryLayerEquations
-{
-    double momentum_x;
-    double momentum_y;
-    double kinetic_energy;
-    double lateral_curvature;
-    double shear_stress_x;
-    double shear_stress_y;
 };
 
 /*
@@ -190,44 +39,28 @@ struct BoundaryLayerEquations
     MATH FUNCTIONS
 #####################################################
 */
-double division(double a,
-                double b)
-{
-    if ((-ZERO_ERROR < b) && (b < 0))
-    {
-        return -a / ZERO_ERROR;
-    }
-    else if ((0 < b) && (b < ZERO_ERROR))
-    {
-        return a / ZERO_ERROR;
-    }
-    else
-    {
-        return a / b;
+double division(double a, double b) {
+    if (b < 0) {
+        return a / (b - ZERO_ERROR);
+    } else {
+        return a / (b + ZERO_ERROR);
     }
 }
 
-double norm(struct Point p)
-{
+double norm(struct Point p) {
     return sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
 }
 
-struct Point cross(struct Point p1,
-                   struct Point p2)
-{
+struct Point cross(struct Point p1, struct Point p2) {
     struct Point p = {p1.y * p2.z - p1.z * p2.y, p1.z * p2.x - p1.x * p2.z, p1.x * p2.y - p1.y * p2.x};
     return p;
 }
 
-double dot(struct Point p1,
-           struct Point p2)
-{
+double dot(struct Point p1, struct Point p2) {
     return p1.x * p2.x + p1.y * p2.y + p1.z * p2.z;
 }
 
-double angleBetweenVectors(struct Point p1,
-                           struct Point p2)
-{
+double angleBetweenVectors(struct Point p1, struct Point p2) {
 
     double norm1 = norm(p1);
     double norm2 = norm(p2);
@@ -236,48 +69,12 @@ double angleBetweenVectors(struct Point p1,
     return acos(dot12 / (norm1 * norm2));
 }
 
-double absValue(double a)
-{
-    if (a < 0)
-    {
-        return -a;
-    }
-    else
-    {
-        return a;
-    }
-}
-
-void integrate_trap(int n,
-                    double *x,
-                    double *y,
-                    double *out,
-                    double mult)
-{
-
-    int i;
-
-    *out = 0.0;
-
-    for (i = 0; i < n - 1; i++)
-    {
-        *out = *out + 0.5 * (x[i + 1] - x[i]) * (y[i + 1] + y[i]);
-    }
-
-    *out = *out * mult;
-}
-
 /*
 #####################################################
     HELPER FUNCTIONS
 #####################################################
 */
-void calculateVerticesConnection(int nv,
-                                 int nf,
-                                 double *vertices,
-                                 int *faces,
-                                 struct VerticeConnection *connection)
-{
+void calculateVerticesConnection(int nv, int nf, double *vertices, int *faces, struct VerticeConnection *connection) {
 
     /* Parameters */
     int i, j, k, n, faceLine, verticeLine1, verticeLine2, verticeLine3;
@@ -292,22 +89,19 @@ void calculateVerticesConnection(int nv,
     angles = (double *)malloc(50 * sizeof(double));
 
     /* Loop over vertices */
-    for (i = 0; i < nv; i++)
-    {
+    for (i = 0; i < nv; i++) {
 
         // Reset the number of faces and angles
         n = 0;
         sum = 0.0;
 
         /* Loop over faces */
-        for (j = 0; j < nf; j++)
-        {
+        for (j = 0; j < nf; j++) {
 
             faceLine = j * 3;
 
             /* Check if the face contain the vertice */
-            if ((faces[faceLine] == i) || (faces[faceLine + 1] == i) || (faces[faceLine + 2] == i))
-            {
+            if ((faces[faceLine] == i) || (faces[faceLine + 1] == i) || (faces[faceLine + 2] == i)) {
 
                 /* Calculate the angle */
                 if (faces[faceLine] == i)
@@ -365,12 +159,7 @@ void calculateVerticesConnection(int nv,
     free(angles);
 }
 
-void calculateFacesConnection(int nv,
-                              int nf,
-                              int *faces,
-                              struct VerticeConnection *verticesConnection,
-                              struct FacesConnection *facesConnection)
-{
+void calculateFacesConnection(int nv, int nf, int *faces, struct VerticeConnection *verticesConnection, struct FacesConnection *facesConnection) {
 
     /* Parameters */
     int i, j, k;
@@ -459,456 +248,12 @@ void calculateFacesConnection(int nv,
     free(connectedFaces);
 }
 
-void calculateVerticesValues(int nv,
-                             int nf,
-                             struct VerticeConnection *connection,
-                             double *in,
-                             double *out)
-{
-
-    int i, j;
-
-    for (i = 0; i < nv; i++)
-    {
-        out[i] = 0;
-        for (j = 0; j < connection[i].n; j++)
-        {
-            out[i] = out[i] + in[connection[i].faces[j]] * connection[i].coeffs[j];
-        }
-    }
-}
-
-void find_exp_ratio(double S,
-                    double a0,
-                    double n,
-                    double *r0)
-{
-
-    /* Parameters */
-    int i;
-    int calc;
-    double step;
-    double tol;
-    double aux, faux;
-    double dfdr, dx;
-    double a, fa, b, fb;
-
-    calc = 0;
-
-    // Convergence
-    tol = 1e-8;
-
-    // Check convergence
-    if ((1 - tol < *r0) && (*r0 < 1 + tol))
-        *r0 = 1 + tol;
-
-    aux = a0 * (1 - pow(*r0, n)) / (1 - *r0) - S;
-
-    if ((-tol < aux) && (aux < tol))
-        calc = 1;
-
-    if (calc == 0)
-    {
-
-        // Find edges
-        step = 1e-2;
-
-        if (aux < 0)
-        {
-            fa = aux;
-            a = *r0;
-            while (aux <= 0)
-            {
-                *r0 = *r0 + step;
-                if ((1 - tol < *r0) && (*r0 < 1 + tol))
-                    *r0 = 1 + tol;
-                aux = a0 * (1 - pow(*r0, n)) / (1 - *r0) - S;
-                if (aux < 0)
-                {
-                    fa = aux;
-                    a = *r0;
-                }
-            }
-            b = *r0;
-            fb = aux;
-        }
-        else
-        {
-            fb = aux;
-            b = *r0;
-            while (aux >= 0)
-            {
-                *r0 = *r0 - step;
-                if ((1 - tol < *r0) && (*r0 < 1 + tol))
-                    *r0 = 1 + tol;
-                aux = a0 * (1 - pow(*r0, n)) / (1 - *r0) - S;
-                if (aux > 0)
-                {
-                    fb = aux;
-                    b = *r0;
-                }
-            }
-            a = *r0;
-            fa = aux;
-        }
-
-        // Find root
-        for (i = 0; i < 500; i++)
-        {
-
-            aux = 0.5 * (a + b);
-            if ((1 - tol < aux) && (aux < 1 + tol))
-                aux = 1 + tol;
-            faux = a0 * (1 - pow(aux, n)) / (1 - aux) - S;
-
-            *r0 = aux;
-
-            if ((-tol < faux) && (faux < tol))
-            {
-                break;
-            }
-
-            if (faux < 0)
-            {
-                a = aux;
-                fa = faux;
-            }
-            else
-            {
-                b = aux;
-                fb = faux;
-            }
-        }
-    }
-}
-
-struct Point gradient(double centerValue,
-                      struct Point p1,
-                      struct Point p2,
-                      struct Point p3,
-                      struct Point e1,
-                      struct Point e2,
-                      struct Point e3,
-                      struct Point vel,
-                      double transpiration)
-{
-
-    struct Point p0;
-
-    struct Point p01;
-    struct Point p02;
-    struct Point p03;
-
-    struct Point n1;
-    struct Point n2;
-    struct Point n3;
-    struct Point n;
-
-    struct Point grad;
-
-    // Gradient in plane system
-    p0.x = (p1.x + p2.x + p3.x) / 3;
-    p0.y = (p1.y + p2.y + p3.y) / 3;
-    p0.z = centerValue;
-
-    p01.x = p1.x - p0.x;
-    p01.y = p1.y - p0.y;
-    p01.z = p1.z - p0.z;
-
-    p02.x = p2.x - p0.x;
-    p02.y = p2.y - p0.y;
-    p02.z = p2.z - p0.z;
-
-    p03.x = p3.x - p0.x;
-    p03.y = p3.y - p0.y;
-    p03.z = p3.z - p0.z;
-
-    n1.x = p01.y * p02.z - p01.z * p02.y;
-    n1.y = p01.z * p02.x - p01.x * p02.z;
-    n1.z = p01.x * p02.y - p01.y * p02.x;
-
-    n2.x = p02.y * p03.z - p02.z * p03.y;
-    n2.y = p02.z * p03.x - p02.x * p03.z;
-    n2.z = p02.x * p03.y - p02.y * p03.x;
-
-    n3.x = p03.y * p01.z - p03.z * p01.y;
-    n3.y = p03.z * p01.x - p03.x * p01.z;
-    n3.z = p03.x * p01.y - p03.y * p01.x;
-
-    n.x = n1.x + n2.x + n3.x;
-    n.y = n1.y + n2.y + n3.y;
-    n.z = n1.z + n2.z + n3.z;
-
-    grad.x = -n.x / n.z;
-    grad.y = -n.y / n.z;
-    grad.z = 0.0;
-
-    // Convert to streamline system
-    struct Point dir1;
-    struct Point dir2;
-    double norm;
-    double s1;
-    double s2;
-
-    norm = sqrt(pow(vel.x - transpiration * e3.x, 2) + pow(vel.y - transpiration * e3.y, 2) + pow(vel.z - transpiration * e3.z, 2));
-
-    dir1.x = (vel.x - transpiration * e3.x) / norm;
-    dir1.y = (vel.y - transpiration * e3.y) / norm;
-    dir1.z = (vel.z - transpiration * e3.z) / norm;
-
-    dir2.x = e3.y * dir1.z - e3.z * dir1.y;
-    dir2.y = e3.z * dir1.x - e3.x * dir1.z;
-    dir2.z = e3.x * dir1.y - e3.y * dir1.x;
-
-    s1 = grad.x * dir1.x + grad.y * dir1.y + grad.z * dir1.z;
-    s2 = grad.x * dir2.x + grad.y * dir2.y + grad.z * dir2.z;
-
-    // Output
-    struct Point out;
-
-    out.x = s1;
-    out.y = s2;
-    out.z = 0.0;
-
-    return out;
-}
-
-double divergence(struct Point p1,
-                  struct Point p2,
-                  struct Point p3,
-                  struct Point v1,
-                  struct Point v2,
-                  struct Point v3,
-                  double area)
-{
-
-    // Sides
-    double norm1;
-    double norm2;
-    double norm3;
-
-    struct Point line1;
-    struct Point line2;
-    struct Point line3;
-
-    struct Point vec1;
-    struct Point vec2;
-    struct Point vec3;
-
-    norm1 = sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
-    norm2 = sqrt(pow(p3.x - p2.x, 2) + pow(p3.y - p2.y, 2));
-    norm3 = sqrt(pow(p1.x - p3.x, 2) + pow(p1.y - p3.y, 2));
-
-    line1.x = (p2.x - p1.x) / norm1;
-    line1.y = (p2.y - p1.y) / norm1;
-    line1.z = 0.0;
-    line2.x = (p3.x - p2.x) / norm2;
-    line2.y = (p3.y - p2.y) / norm2;
-    line2.z = 0.0;
-    line3.x = (p1.x - p3.x) / norm3;
-    line3.y = (p1.y - p3.y) / norm3;
-    line3.z = 0.0;
-
-    vec1.x = line1.y;
-    vec1.y = -line1.x;
-    vec1.z = 0.0;
-
-    vec2.x = line2.y;
-    vec2.y = -line2.x;
-    vec2.z = 0.0;
-
-    vec3.x = line3.y;
-    vec3.y = -line3.x;
-    vec3.z = 0.0;
-
-    // Flux
-    double a, b;
-    double integral;
-
-    // Line 1
-    a = vec1.x * v1.x + vec1.y * v1.y;
-    b = vec1.x * v2.x + vec1.y * v2.y;
-    integral = 0.5 * norm1 * (a + b);
-
-    // Line 2
-    a = vec2.x * v2.x + vec2.y * v2.y;
-    b = vec2.x * v3.x + vec2.y * v3.y;
-    integral = integral + 0.5 * norm2 * (a + b);
-
-    // Line 3
-    a = vec3.x * v3.x + vec3.y * v3.y;
-    b = vec3.x * v1.x + vec3.y * v1.y;
-    integral = integral + 0.5 * norm3 * (a + b);
-
-    return integral / area;
-}
-
-void calculateGradient(double centerValue,
-                       struct Point p1,
-                       struct Point p2,
-                       struct Point p3,
-                       struct Point e1,
-                       struct Point e2,
-                       struct Point e3,
-                       struct Point vel,
-                       double transpiration,
-                       double *x, double *y)
-{
-
-    struct Point p0;
-
-    struct Point p01;
-    struct Point p02;
-    struct Point p03;
-
-    struct Point n1;
-    struct Point n2;
-    struct Point n3;
-    struct Point n;
-
-    struct Point grad;
-
-    // Gradient in plane system
-    p0.x = (p1.x + p2.x + p3.x) / 3;
-    p0.y = (p1.y + p2.y + p3.y) / 3;
-    p0.z = centerValue;
-
-    p01.x = p1.x - p0.x;
-    p01.y = p1.y - p0.y;
-    p01.z = p1.z - p0.z;
-
-    p02.x = p2.x - p0.x;
-    p02.y = p2.y - p0.y;
-    p02.z = p2.z - p0.z;
-
-    p03.x = p3.x - p0.x;
-    p03.y = p3.y - p0.y;
-    p03.z = p3.z - p0.z;
-
-    n1.x = p01.y * p02.z - p01.z * p02.y;
-    n1.y = p01.z * p02.x - p01.x * p02.z;
-    n1.z = p01.x * p02.y - p01.y * p02.x;
-
-    n2.x = p02.y * p03.z - p02.z * p03.y;
-    n2.y = p02.z * p03.x - p02.x * p03.z;
-    n2.z = p02.x * p03.y - p02.y * p03.x;
-
-    n3.x = p03.y * p01.z - p03.z * p01.y;
-    n3.y = p03.z * p01.x - p03.x * p01.z;
-    n3.z = p03.x * p01.y - p03.y * p01.x;
-
-    n.x = n1.x + n2.x + n3.x;
-    n.y = n1.y + n2.y + n3.y;
-    n.z = n1.z + n2.z + n3.z;
-
-    grad.x = -n.x / n.z;
-    grad.y = -n.y / n.z;
-    grad.z = 0.0;
-
-    // Convert to streamline system
-    struct Point dir1;
-    struct Point dir2;
-    double norm;
-    double s1;
-    double s2;
-
-    norm = sqrt(pow(vel.x - transpiration * e3.x, 2) + pow(vel.y - transpiration * e3.y, 2) + pow(vel.z - transpiration * e3.z, 2));
-
-    dir1.x = (vel.x - transpiration * e3.x) / norm;
-    dir1.y = (vel.y - transpiration * e3.y) / norm;
-    dir1.z = (vel.z - transpiration * e3.z) / norm;
-
-    dir2.x = e3.y * dir1.z - e3.z * dir1.y;
-    dir2.y = e3.z * dir1.x - e3.x * dir1.z;
-    dir2.z = e3.x * dir1.y - e3.y * dir1.x;
-
-    s1 = grad.x * dir1.x + grad.y * dir1.y + grad.z * dir1.z;
-    s2 = grad.x * dir2.x + grad.y * dir2.y + grad.z * dir2.z;
-
-    // Output
-    *x = s1;
-    *x = s2;
-}
-
-void calculateDivergence(struct Point p1,
-                         struct Point p2,
-                         struct Point p3,
-                         struct Point v1,
-                         struct Point v2,
-                         struct Point v3,
-                         double area,
-                         double *out) {
-
-    // Sides
-    double norm1;
-    double norm2;
-    double norm3;
-
-    struct Point line1;
-    struct Point line2;
-    struct Point line3;
-
-    struct Point vec1;
-    struct Point vec2;
-    struct Point vec3;
-
-    norm1 = sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
-    norm2 = sqrt(pow(p3.x - p2.x, 2) + pow(p3.y - p2.y, 2));
-    norm3 = sqrt(pow(p1.x - p3.x, 2) + pow(p1.y - p3.y, 2));
-
-    line1.x = (p2.x - p1.x) / norm1;
-    line1.y = (p2.y - p1.y) / norm1;
-    line1.z = 0.0;
-    line2.x = (p3.x - p2.x) / norm2;
-    line2.y = (p3.y - p2.y) / norm2;
-    line2.z = 0.0;
-    line3.x = (p1.x - p3.x) / norm3;
-    line3.y = (p1.y - p3.y) / norm3;
-    line3.z = 0.0;
-
-    vec1.x = line1.y;
-    vec1.y = -line1.x;
-    vec1.z = 0.0;
-
-    vec2.x = line2.y;
-    vec2.y = -line2.x;
-    vec2.z = 0.0;
-
-    vec3.x = line3.y;
-    vec3.y = -line3.x;
-    vec3.z = 0.0;
-
-    // Flux
-    double a, b;
-    double integral;
-
-    // Line 1
-    a = vec1.x * v1.x + vec1.y * v1.y;
-    b = vec1.x * v2.x + vec1.y * v2.y;
-    integral = 0.5 * norm1 * (a + b);
-
-    // Line 2
-    a = vec2.x * v2.x + vec2.y * v2.y;
-    b = vec2.x * v3.x + vec2.y * v3.y;
-    integral = integral + 0.5 * norm2 * (a + b);
-
-    // Line 3
-    a = vec3.x * v3.x + vec3.y * v3.y;
-    b = vec3.x * v1.x + vec3.y * v1.y;
-    integral = integral + 0.5 * norm3 * (a + b);
-
-    *out = integral / area;
-}
-
 /*
 #####################################################
     LINEAR SYSTEM
 #####################################################
 */
-void solveLinearSystem(lapack_int n,
-                       double *A,
-                       double *b)
-{
+void solveLinearSystem(lapack_int n, double *A, double *b) {
 
     /* Locals */
     lapack_int info;
@@ -928,17 +273,7 @@ void solveLinearSystem(lapack_int n,
     POTENTIAL FLOW
 #####################################################
 */
-void sourceFunc(struct Point p,
-                struct Point p1,
-                struct Point p2,
-                struct Point p3,
-                struct Point e1,
-                struct Point e2,
-                struct Point e3,
-                double area,
-                double maxDistance,
-                double *vel)
-{
+void sourceFunc(struct Point p, struct Point p1, struct Point p2, struct Point p3, struct Point e1, struct Point e2, struct Point e3, double area, double maxDistance, double *vel) {
 
     double u, v, w;
     double distance = norm(p);
@@ -1000,11 +335,7 @@ void sourceFunc(struct Point p,
     vel[2] = u * e1.z + v * e2.z + w * e3.z;
 }
 
-void lineFunc(struct Point p,
-              struct Point p1,
-              struct Point p2,
-              double *vel)
-{
+void lineFunc(struct Point p, struct Point p1, struct Point p2, double *vel) {
 
     struct Point r1 = {p1.x - p.x, p1.y - p.y, p1.z - p.z};
     struct Point r2 = {p2.x - p.x, p2.y - p.y, p2.z - p.z};
@@ -1023,17 +354,7 @@ void lineFunc(struct Point p,
     vel[2] = FACTOR * r1xr2.z * dot;
 }
 
-void doubletFunc(struct Point p,
-                 struct Point p1,
-                 struct Point p2,
-                 struct Point p3,
-                 struct Point e1,
-                 struct Point e2,
-                 struct Point e3,
-                 double area,
-                 double maxDistance,
-                 double *vel)
-{
+void doubletFunc(struct Point p, struct Point p1, struct Point p2, struct Point p3, struct Point e1, struct Point e2, struct Point e3, double area, double maxDistance, double *vel) {
 
     double distance = norm(p);
 
@@ -1080,41 +401,7 @@ void doubletFunc(struct Point p,
     }
 }
 
-void createLinearSystem(int n,
-                        double *facesAreas,
-                        double *facesMaxDistance,
-                        double *facesCenter,
-                        double *controlPoints,
-                        double *p1,
-                        double *p2,
-                        double *p3,
-                        double *e1,
-                        double *e2,
-                        double *e3,
-                        double *freestream,
-                        double *sigma,
-                        int nSpanLeftWing,
-                        int nWakeLeftWing,
-                        int *leftWingGrid,
-                        double *leftWingVertices,
-                        int *leftWingFaces,
-                        int nSpanRightWing,
-                        int nWakeRightWing,
-                        int *rightWingGrid,
-                        double *rightWingVertices,
-                        int *rightWingFaces,
-                        int nSpanTail,
-                        int nWakeTail,
-                        int *tailGrid,
-                        double *tailVertices,
-                        int *tailFaces,
-                        double *matrix,
-                        double *array,
-                        double *matrixVelx,
-                        double *matrixVely,
-                        double *matrixVelz,
-                        double *arrayVel)
-{
+void createLinearSystem(int n, double *facesAreas, double *facesMaxDistance, double *facesCenter, double *controlPoints, double *p1, double *p2, double *p3, double *e1, double *e2, double *e3, double *freestream, double *sigma, int nSpanLeftWing, int nWakeLeftWing, int *leftWingGrid, double *leftWingVertices, int *leftWingFaces, int nSpanRightWing, int nWakeRightWing, int *rightWingGrid, double *rightWingVertices, int *rightWingFaces, int nSpanTail, int nWakeTail, int *tailGrid, double *tailVertices, int *tailFaces, double *matrix, double *array, double *matrixVelx, double *matrixVely, double *matrixVelz, double *arrayVel) {
 
     ///---------------------------------------///
     /// Parameters
@@ -1533,12 +820,7 @@ void createLinearSystem(int n,
     free(lineVel);
 }
 
-void calculateDoubletDistribution(int n,
-                                  double *A,
-                                  double *b,
-                                  double *transpiration,
-                                  double *sol)
-{
+void calculateDoubletDistribution(int n, double *A, double *b, double *transpiration, double *sol) {
 
     /* Loop parameter */
     int i;
@@ -1556,19 +838,7 @@ void calculateDoubletDistribution(int n,
     free(aux);
 }
 
-void calculateSurfaceParameters(int n,
-                                double *matrixVelx,
-                                double *matrixVely,
-                                double *matrixVelz,
-                                double *arrayVel,
-                                double *doublet,
-                                double freestream,
-                                double *velx, double *vely, double *velz,
-                                double *velNorm,
-                                double *cp,
-                                double *mach,
-                                double sound_speed)
-{
+void calculateSurfaceParameters(int n, double *matrixVelx, double *matrixVely, double *matrixVelz, double *arrayVel, double *doublet, double freestream, double *velx, double *vely, double *velz, double *velNorm, double *cp, double *mach, double sound_speed) {
 
     /* Loop parameter */
     int i, j, line1, line2, point;
@@ -1613,1486 +883,1105 @@ void calculateSurfaceParameters(int n,
     BOUNDARY LAYER
 #####################################################
 */
-void calculateProfiles(double delta,
-                       double A,
-                       double B,
-                       double Psi,
-                       double Ctau1,
-                       double Ctau2,
-                       struct FreestreamParameters *freestream,
-                       struct ProfileParameters *profiles)
-{
+struct IntegralThickness {
+    double *delta_1_ast, *delta_2_ast;
+    double *phi_11, *phi_12, *phi_21, *phi_22;
+    double *Ktauxx, *Ktauxy, *Ktauyx, *Ktauyy;
+    double *Sx, *Sy;
+    double *phi_1_ast, *phi_2_ast;
+    double *theta_1_o, *theta_2_o;
+    double *delta_1_line, *delta_2_line;
+    double *delta_1_o, *delta_2_o;
+    double *S0, *T0;
+    double *C_D, *C_D_x, *C_D_o;
+};
 
-    /* Parameters */
-    int i;                             // loop
-    int flow_type;                     // laminar or turbulent
-    double delta_eta;                  // eta step or first step
-    double Re_delta;                   // reynolds number
-    double f0, f1, f2, f3;             // laminar curves
-    double mu_mui;                     // viscosity ratio
-    double h_hi;                       // enthalpy ratio
-    double epsilon_line;               // thermodynamic aux parameter
-    double Utau, Wtau, qtau;           // turbulent shear velocities
-    double y_plus_1;                   // first element height
-    double u_plus_max;                 // u_plus(delta_plus)
-    double g0;                         // outer layer profile
-    double dg0deta;                    // outer layer profile derivative
-    double delta_plus;                 // dimensionless turbulent boundary layer height
-    double Upsilon, K;                 // turbulent outer layer parameters
-    double *u_plus, *y_plus;           // turbulent law of the wall profiles
-    double k, C;                       // law of the wall parameters
-    double u_min, y_min, u_max, y_max; // buffer region interpolation limits
-    double log_y_min, log_y_max;       // log of the interpolation limits
-    double a, b, c, t;                 // interpolation parameters
-    double exp_ratio;                  // expansion ratio
-    double eta2, eta3, eta4, eta5;     // power of eta
+struct FaceDivergents {
+    double div_phi_11_12, div_phi_21_22;
+    double div_delta_1_2_ast;
+    double div_phi_1_2_ast;
+    double div_theta_1_2_o;
+    double div_Ktau_xx_xy;
+    double div_Ktau_yx_yy;
+};
 
-    /* Initilize */
-    if (sqrt(pow(Ctau1, 2) + pow(Ctau2, 2)) > CTAU_CRIT)
-    {
-        flow_type = 1;
+struct FaceGradients {
+    double grad_u2_x, grad_u2_y;
+    double grad_phi_x, grad_phi_y;
+};
+
+struct FaceEquations {
+    double momentum_x, momentum_y;
+    double kinetic_energy;
+    double lateral_curvature;
+    double shear_stress_x, shear_stress_y;
+    double obj;
+    int interaction;
+};
+
+double absValue(double a) {
+    if (a < 0) {
+        return - a;
+    } else {
+        return a;
     }
-    else
-    {
-        flow_type = 0;
-    };
-    Re_delta = freestream->velocity * freestream->density * delta / freestream->viscosity;
-    u_plus = (double *)malloc(profiles->n * sizeof(double));
-    y_plus = (double *)malloc(profiles->n * sizeof(double));
-    k = 0.41;
-    C = 5.0;
-    u_min = 5.0;
-    y_min = 5.0;
-    u_max = 17.922725284263503;
-    y_max = 200;
-    log_y_min = log10(y_min);
-    log_y_max = log10(y_max);
-    a = u_min + 10 * log_y_min * log(10) * 0.26957378;
-    b = 14.2135593;
-    c = u_max - (1 / (k * log10(M_E))) * 0.51958278;
-    y_plus_1 = 0.1;
-    exp_ratio = 0.95;
-    Utau = A / ((pow(pow(A, 2) + pow(B, 2), 0.25) * sqrt(Re_delta)) + 1e-10);
-    Wtau = B / ((pow(pow(A, 2) + pow(B, 2), 0.25) * sqrt(Re_delta)) + 1e-10);
-    epsilon_line = 0.2 * pow(freestream->mach, 2);
-
-    /* Define eta */
-    if (flow_type == LAMINAR_FLOW)
-    {
-
-        delta_eta = 1 / ((double)profiles->n - 1);
-
-        for (i = 0; i < profiles->n; i++)
-        {
-            profiles->eta[i] = i * delta_eta;
-        }
-    }
-    else
-    {
-
-        h_hi = 1 + epsilon_line;
-        mu_mui = pow(h_hi, 1.5) * 2 / (h_hi + 1);
-        delta_plus = sqrt(Re_delta) * (1 / mu_mui) * (1 / h_hi) * pow(pow(A, 2) + pow(B, 2), 0.25);
-
-        if (delta_plus / ((double)profiles->n - 1) > y_plus_1)
-        { // Geoemtric distribution
-
-            // Find expansion ratio
-            find_exp_ratio(delta_plus, y_plus_1, (double)profiles->n - 1, &exp_ratio);
-
-            for (i = 0; i < profiles->n; i++)
-            {
-                if (i == 0)
-                {
-                    y_plus[i] = 0.0;
-                }
-                else if (i == profiles->n - 1)
-                {
-                    y_plus[i] = delta_plus;
-                }
-                else
-                {
-                    y_plus[i] = y_plus[i - 1] + y_plus_1 * pow(exp_ratio, i - 1);
-                }
-                profiles->eta[i] = y_plus[i] / delta_plus;
-            }
-        }
-        else
-        { // Linear distribution
-
-            delta_eta = 1 / ((double)profiles->n - 1);
-
-            for (i = 0; i < profiles->n; i++)
-            {
-                profiles->eta[i] = i * delta_eta;
-                y_plus[i] = delta_plus * profiles->eta[i];
-            }
-        }
-    }
-
-    /* Create profiles */
-    if (flow_type == LAMINAR_FLOW)
-    {
-
-        // Velocities
-        for (i = 0; i < profiles->n; i++)
-        {
-
-            eta2 = pow(profiles->eta[i], 2);
-            eta3 = pow(profiles->eta[i], 3);
-            eta4 = pow(profiles->eta[i], 4);
-            eta5 = pow(profiles->eta[i], 5);
-
-            f0 = 6 * eta2 - 8 * eta3 + 3 * eta4;
-            f1 = profiles->eta[i] - 3 * eta2 + 3 * eta3 - eta4;
-            f2 = (profiles->eta[i] - 4 * eta2 + 6 * eta3 - 4 * eta4 + eta5) * pow(1 - profiles->eta[i], 2);
-            f3 = (eta2 - 3 * eta3 + 3 * eta4 - eta5) * pow(1 - profiles->eta[i], 2);
-
-            profiles->U[i] = A * (1 - 0.6 * (A - 3) * eta3) * f1 + f0;
-            profiles->W[i] = B * f2 + Psi * f3;
-
-            profiles->R[i] = 1 / (1 + epsilon_line * (1 - pow(profiles->U[i], 2) - pow(profiles->W[i], 2)));
-        }
-
-        // Gradient and Shear stress
-        for (i = 0; i < profiles->n; i++)
-        {
-
-            f0 = 12 * profiles->eta[i] - 24 * pow(profiles->eta[i], 2) + 12 * pow(profiles->eta[i], 3);
-            f1 = 1 - 6 * profiles->eta[i] + 9 * pow(profiles->eta[i], 2) - 4 * pow(profiles->eta[i], 3);
-            f2 = (1 - 8 * profiles->eta[i] + 18 * pow(profiles->eta[i], 2) - 16 * pow(profiles->eta[i], 3) + 5 * pow(profiles->eta[i], 4)) * pow(1 - profiles->eta[i], 2) - 2 * (1 - profiles->eta[i]) * (profiles->eta[i] - 3 * pow(profiles->eta[i], 2) + 3 * pow(profiles->eta[i], 3) - pow(profiles->eta[i], 4));
-            f3 = (2 * profiles->eta[i] - 9 * pow(profiles->eta[i], 2) + 12 * pow(profiles->eta[i], 3) - 5 * pow(profiles->eta[i], 4)) * pow(1 - profiles->eta[i], 2) - 2 * (1 - profiles->eta[i]) * (pow(profiles->eta[i], 2) - 3 * pow(profiles->eta[i], 3) + 3 * pow(profiles->eta[i], 4) - pow(profiles->eta[i], 5));
-
-            profiles->dU_deta[i] = -1.8 * A * (A - 3) * pow(profiles->eta[i], 2) * (profiles->eta[i] - 3 * pow(profiles->eta[i], 2) + 3 * pow(profiles->eta[i], 3) - pow(profiles->eta[i], 4)) + A * (1 - 0.6 * (A - 3) * pow(profiles->eta[i], 3)) * f1 + f0;
-            profiles->dW_deta[i] = B * f2 + Psi * f3;
-
-            mu_mui = (1 / profiles->R[i], 1.5) * 2 / (1 / profiles->R[i] + 1);
-
-            profiles->S[i] = (mu_mui / Re_delta) * profiles->dU_deta[i];
-            profiles->T[i] = (mu_mui / Re_delta) * profiles->dW_deta[i];
-        }
-    }
-    else
-    {
-
-        // u_plus_max
-        if (delta_plus <= y_min)
-        {
-            u_plus_max = delta_plus;
-        }
-        else if ((y_min < delta_plus) && (delta_plus < y_max))
-        {
-            t = (log10(delta_plus) - log_y_min) / (log_y_max - log_y_min);
-            u_plus_max = pow(1 - t, 4) * u_min + 4 * pow(1 - t, 3) * t * a + 6 * pow(1 - t, 2) * pow(t, 2) * b + 4 * (1 - t) * pow(t, 3) * c + pow(t, 4) * u_max;
-        }
-        else
-        {
-            u_plus_max = (1 / k) * log(delta_plus) + C;
-        }
-
-        K = sqrt(pow(Wtau * u_plus_max, 2) + pow(1 - Utau * u_plus_max, 2));
-        Upsilon = atan(Wtau * u_plus_max / (1 - Utau * u_plus_max));
-
-        // Velocities
-        for (i = 0; i < profiles->n; i++)
-        {
-
-            // u_plus
-            if (y_plus[i] < y_min)
-            {
-                u_plus[i] = y_plus[i];
-            }
-            else if ((y_min <= y_plus[i]) && (y_plus[i] <= y_max))
-            {
-                t = (log10(y_plus[i]) - log_y_min) / (log_y_max - log_y_min);
-                u_plus[i] = pow(1 - t, 4) * u_min + 4 * pow(1 - t, 3) * t * a + 6 * pow(1 - t, 2) * pow(t, 2) * b + 4 * (1 - t) * pow(t, 3) * c + pow(t, 4) * u_max;
-            }
-            else
-            {
-                u_plus[i] = (1 / k) * log(y_plus[i]) + C;
-            }
-
-            g0 = 3 * pow(profiles->eta[i], 2) - 2 * pow(profiles->eta[i], 3);
-
-            profiles->U[i] = Utau * u_plus[i] + K * cos(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * g0;
-            profiles->W[i] = Wtau * u_plus[i] - K * sin(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * g0;
-
-            profiles->R[i] = 1 / (1 + epsilon_line * (1 - pow(profiles->U[i], 2) - pow(profiles->W[i], 2)));
-        }
-
-        // Gradient and Shear stress
-        for (i = 0; i < profiles->n; i++)
-        {
-
-            g0 = 3 * pow(profiles->eta[i], 2) - 2 * pow(profiles->eta[i], 3);
-
-            profiles->dU_deta[i] = Utau * delta_plus * (1 / (1 + exp(-k * C) * (k * exp(k * u_plus[i]) - k - pow(k, 2) * u_plus[i] - 0.5 * k * pow(k * u_plus[i], 2)))) + 2 * Psi * (1 - profiles->eta[i]) * K * sin(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * g0 + K * cos(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * (6 * profiles->eta[i] - 6 * pow(profiles->eta[i], 2));
-            profiles->dW_deta[i] = Wtau * delta_plus * (1 / (1 + exp(-k * C) * (k * exp(k * u_plus[i]) - k - pow(k, 2) * u_plus[i] - 0.5 * k * pow(k * u_plus[i], 2)))) + 2 * Psi * (1 - profiles->eta[i]) * K * cos(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * g0 - K * sin(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * (6 * profiles->eta[i] - 6 * pow(profiles->eta[i], 2));
-
-            mu_mui = (1 / profiles->R[i], 1.5) * 2 / (1 / profiles->R[i] + 1);
-
-            g0 = 3 * pow(profiles->eta[i], 2) - 2 * pow(profiles->eta[i], 3);
-            dg0deta = 6 * profiles->eta[i] - 6 * pow(profiles->eta[i], 2);
-
-            profiles->S[i] = profiles->R[i] * Utau * sqrt(pow(Utau, 2) + pow(Wtau, 2)) * (1 - g0) + profiles->R[i] * Ctau1 * K * cos(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * dg0deta;
-            profiles->T[i] = profiles->R[i] * Wtau * sqrt(pow(Utau, 2) + pow(Wtau, 2)) * (1 - g0) + profiles->R[i] * Ctau2 * K * sin(Upsilon - Psi * pow(1 - profiles->eta[i], 2)) * dg0deta;
-        }
-    }
-
-    /* Free arrays */
-    free(u_plus);
-    free(y_plus);
 }
 
-void calculateIntegralThickness(struct ProfileParameters *profiles,
-                                struct IntegralThicknessParameters *integralThickness,
-                                double delta,
-                                double Psi)
-{
+void trapz(int n, double *x, double *y, double *out) {
+    *out = 0.0;
+    for (int i = 0; i < n - 1; i++) *out = *out + 0.5 * (x[i + 1] - x[i]) * (y[i + 1] + y[i]);
+}
 
-    /* Parameters */
+void calculateParameters(int face, double delta, double A, double B, double Psi, double amp, double velocity, double density, double viscosity, double mach, struct IntegralThickness params) {
+    
+    /* Profiles */
     int i;
-    double *func;
+    double delta_eta = 1 / ((double) LAYERS - 1);
+    double *eta = (double *)malloc(LAYERS * sizeof(double));
+    double *U = (double *)malloc(LAYERS * sizeof(double));
+    double *W = (double *)malloc(LAYERS * sizeof(double));
+    double *dUdeta = (double *)malloc(LAYERS * sizeof(double));
+    double *dWdeta = (double *)malloc(LAYERS * sizeof(double));
+    double *S = (double *)malloc(LAYERS * sizeof(double));
+    double *T = (double *)malloc(LAYERS * sizeof(double));
+    double *R = (double *)malloc(LAYERS * sizeof(double));
+    double *psi = (double *)malloc(LAYERS * sizeof(double));
+    double *dpsideta = (double *)malloc(LAYERS * sizeof(double));
 
-    /* Initialize */
-    func = (double *)malloc(profiles->n * sizeof(double));
+    double reynolds_delta = delta * velocity * density / viscosity;
+    double ratio_mu;
 
-    /* Calculate integral */
-    for (i = 0; i < profiles->n; i++)
-        func[i] = 1 - profiles->R[i] * profiles->U[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->delta_1_ast, delta);
+    double f0, f1, f2, f3, f4;
+    double df0deta, df1deta, df2deta, df3deta, df4deta;
 
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -profiles->R[i] * profiles->W[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->delta_2_ast, delta);
+    for (i = 0; i < LAYERS; i++) {
 
-    for (i = 0; i < profiles->n; i++)
-        func[i] = 1 - profiles->R[i] * pow(profiles->U[i], 2);
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->phi_11, delta);
+        // Height
+        eta[i] = delta_eta * i;
+        
+        // Velocity
+        f0 = 1 - 0.6 * (A - 3) * pow(eta[i], 3);
+        f1 = 6 * pow(eta[i], 2) - 8 * pow(eta[i], 3) + 3 * pow(eta[i], 4);
+        f2 = eta[i] - 3 * pow(eta[i], 2) + 3 * pow(eta[i], 3) - pow(eta[i], 4);
+        f3 = (eta[i] - 4 * pow(eta[i], 2) + 6 * pow(eta[i], 3) - 4 * pow(eta[i], 4) + pow(eta[i], 5)) * pow(1 - eta[i], 2);
+        f4 = (pow(eta[i], 2) - 3 * pow(eta[i], 3) + 3 * pow(eta[i], 4) - pow(eta[i], 5)) * pow(1 - eta[i], 2);
 
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -profiles->R[i] * profiles->U[i] * profiles->W[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->phi_12, delta);
-    integralThickness->phi_21 = integralThickness->phi_12;
+        U[i] = A * f0 * f2 + f1;
+        W[i] = B * f3 + Psi * f4;
 
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -profiles->R[i] * pow(profiles->W[i], 2);
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->phi_22, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = 1 - profiles->R[i] * profiles->U[i] * (pow(profiles->U[i], 2) + pow(profiles->W[i], 2));
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->phi_1_ast, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -profiles->R[i] * profiles->W[i] * (pow(profiles->U[i], 2) + pow(profiles->W[i], 2));
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->phi_2_ast, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = 1 - profiles->U[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->delta_1_line, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -profiles->W[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->delta_2_line, delta);
-
-    integralThickness->delta_q = integralThickness->phi_11 + integralThickness->phi_22;
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -Psi * profiles->R[i] * (pow(profiles->U[i], 2) + pow(profiles->W[i], 2));
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->delta_q_o, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -Psi * profiles->R[i] * profiles->U[i] * (pow(profiles->U[i], 2) + pow(profiles->W[i], 2));
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->theta_1_o, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -Psi * profiles->R[i] * profiles->W[i] * (pow(profiles->U[i], 2) + pow(profiles->W[i], 2));
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->theta_2_o, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -Psi * profiles->U[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->delta_1_o, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = -Psi * profiles->W[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->delta_2_o, delta);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = profiles->S[i] * profiles->dU_deta[i] + profiles->T[i] * profiles->dW_deta[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->C_D, 1.0);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = profiles->S[i] * profiles->dW_deta[i] - profiles->T[i] * profiles->dU_deta[i];
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->C_D_x, 1.0);
-
-    for (i = 0; i < profiles->n; i++)
-        func[i] = Psi * (profiles->S[i] * profiles->dW_deta[i] - profiles->T[i] * profiles->dU_deta[i]);
-    integrate_trap(profiles->n, profiles->eta, func, &integralThickness->C_D_o, 1.0);
-
-    integralThickness->C_f_1 = 2 * profiles->S[0];
-    integralThickness->C_f_2 = 2 * profiles->T[0];
-
-    integralThickness->theta_11 = integralThickness->phi_11 - integralThickness->delta_1_line;
-    integralThickness->theta_22 = integralThickness->phi_22 - integralThickness->delta_2_line;
-
-    /* Free arrays */
-    free(func);
-}
-
-void calculateIntegralDefect(struct ProfileParameters *profiles,
-                             struct IntegralThicknessParameters *integralThickness,
-                             struct FreestreamParameters *freestream,
-                             struct IntegralDefectParameters *integralDefect,
-                             double delta,
-                             double A, double B,
-                             double Ctau1, double Ctau2) {
-
-    /* Aux */
-    double aux_1, aux_2, aux_3;
-
-    /* Initialize */
-    aux_1 = freestream->density * freestream->velocity;
-    aux_2 = freestream->density * freestream->velocity * freestream->velocity;
-    aux_3 = freestream->density * freestream->velocity * freestream->velocity * freestream->velocity;
-
-    /* Calculate defect parameters */
-    integralDefect->M_x = aux_1 * integralThickness->delta_1_ast;
-    integralDefect->M_y = aux_1 * integralThickness->delta_2_ast;
-
-    integralDefect->J_xx = aux_2 * integralThickness->phi_11;
-    integralDefect->J_xy = aux_2 * integralThickness->phi_12;
-    integralDefect->J_yx = aux_2 * integralThickness->phi_21;
-    integralDefect->J_yy = aux_2 * integralThickness->phi_22;
-
-    integralDefect->E_x = aux_3 * integralThickness->phi_1_ast;
-    integralDefect->E_y = aux_3 * integralThickness->phi_2_ast;
-
-    integralDefect->K_o_x = aux_3 * integralThickness->theta_1_o;
-    integralDefect->K_o_y = aux_3 * integralThickness->theta_2_o;
-
-    integralDefect->Q_x = freestream->velocity * integralThickness->delta_1_line;
-    integralDefect->Q_y = freestream->velocity * integralThickness->delta_2_line;
-
-    integralDefect->Q_o_x = freestream->velocity * integralThickness->theta_1_o;
-    integralDefect->Q_o_y = freestream->velocity * integralThickness->theta_2_o;
-
-    integralDefect->tau_w_x = 0.5 * aux_2 * integralThickness->C_f_1;
-    integralDefect->tau_w_y = 0.5 * aux_2 * integralThickness->C_f_2;
-
-    integralDefect->D = aux_3 * integralThickness->C_D;
-    integralDefect->D_x = aux_3 * integralThickness->C_D_x;
-    integralDefect->D_o = aux_3 * integralThickness->C_D_o;
-
-    double mod_Ctau = sqrt(pow(Ctau1, 2) + pow(Ctau2, 2));
-
-    if (mod_Ctau <= CTAU_CRIT) {
-
-        double H_k_1, H_k_2, Re_theta_11, Re_theta_22, f1, f2;
-
-        H_k_1 = (integralThickness->delta_1_ast / integralThickness->theta_11 - 0.29 * freestream->mach * freestream->mach) / (1 + 0.113 * freestream->mach * freestream->mach);
-        Re_theta_11 = freestream->velocity * freestream->density * integralThickness->theta_11 / freestream->viscosity;
-        f1 = 0.01 * sqrt(pow(2.4 * H_k_1 - 3.7 + 2.5 * tanh(1.5 * H_k_1 - 4.65), 2) + 0.25) * (Re_theta_11 - pow(10, (1.415 / (H_k_1 - 1) - 0.489) * tanh(20 / (H_k_1 - 1) - 12.9)));
-        integralDefect->S_tau_x = f1 * freestream->velocity * mod_Ctau / integralThickness->theta_11;
-
-        if (absValue(integralThickness->theta_22) < 1e-10) {
-            integralDefect->S_tau_y = 0.0;
+        // Angular deflection
+        psi[i] = atan(division(W[i], U[i]));
+        if (i == 0) {
+            dpsideta[i] = 0.0;
         } else {
-            H_k_2 = (integralThickness->delta_2_ast / integralThickness->theta_22 - 0.29 * freestream->mach * freestream->mach) / (1 + 0.113 * freestream->mach * freestream->mach);
-            Re_theta_22 = freestream->velocity * freestream->density * integralThickness->theta_22 / freestream->viscosity;
-            f2 = 0.01 * sqrt(pow(2.4 * H_k_2 - 3.7 + 2.5 * tanh(1.5 * H_k_2 - 4.65), 2) + 0.25) * (Re_theta_22 - pow(10, (1.415 / (H_k_2 - 1) - 0.489) * tanh(20 / (H_k_2 - 1) - 12.9)));
-            integralDefect->S_tau_y = f2 * freestream->velocity * mod_Ctau / integralThickness->theta_22;
+            dpsideta[i] = ((dUdeta[i] * W[i] - U[i] * dWdeta[i]) / (U[i] * U[i])) / (1 - pow(division(W[i], U[i]), 2));
         }
+
+        // Density and viscosity ratio
+        R[i] = 1 / (1 + 0.2 * mach * mach * (1 - pow(U[i], 2) - pow(W[i], 2)));
+        ratio_mu = pow(1 / R[i], 1.5) * (1 + 1 / R[0]) / (1 / R[i] + 1 / R[0]);
+
+        // Velocity gradient
+        df0deta = - 1.8 * (A - 3) * pow(eta[i], 2);
+        df1deta = 12 * eta[i] - 24 * pow(eta[i], 2) + 3 * pow(eta[i], 4);
+        df2deta = 1 - 6 * eta[i] + 9 * pow(eta[i], 2) - 4 * pow(eta[i], 3);
+        df3deta = (1 - 8 * eta[i] + 18 * pow(eta[i], 2) - 16 * pow(eta[i], 3) + 5 * pow(eta[i], 4)) * pow(1 - eta[i], 2) + (eta[i] - 4 * pow(eta[i], 2) + 6 * pow(eta[i], 3) - 4 * pow(eta[i], 4) + pow(eta[i], 5)) * 2 * (1 - eta[i]);
+        df4deta = (2 * eta[i] - 9 * pow(eta[i], 2) + 12 * pow(eta[i], 3) - 5 * pow(eta[i], 4)) * pow(1 - eta[i], 2) + (pow(eta[i], 2) - 3 * pow(eta[i], 3) + 3 * pow(eta[i], 4) - pow(eta[i], 5)) * 2 * (1 - eta[i]);
+        
+        dUdeta[i] = A * (df0deta * f2 + f0 * df2deta) + df0deta;
+        dWdeta[i] = B * df3deta + Psi * df4deta;
+        
+        // Shear stress
+        S[i] = (1 / reynolds_delta) * ratio_mu * dUdeta[i];
+        T[i] = (1 / reynolds_delta) * ratio_mu * dWdeta[i];
+
+    }
+
+    /* Integral thickness */
+    double *func = (double *)malloc(LAYERS * sizeof(double));
+
+    for (i = 0; i < LAYERS; i++) func[i] = 1 - R[i] * U[i];
+    trapz(LAYERS, eta, func, &params.delta_1_ast[face]);
+    params.delta_1_ast[face] = delta * params.delta_1_ast[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - R[i] * W[i];
+    trapz(LAYERS, eta, func, &params.delta_2_ast[face]);
+    params.delta_2_ast[face] = delta * params.delta_2_ast[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = 1 - R[i] * U[i] * U[i];
+    trapz(LAYERS, eta, func, &params.phi_11[face]);
+    params.phi_11[face] = delta * params.phi_11[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - R[i] * U[i] * W[i];
+    trapz(LAYERS, eta, func, &params.phi_12[face]);
+    params.phi_12[face] = delta * params.phi_12[face];
+    params.phi_21[face] = params.phi_12[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - R[i] * W[i] * W[i];
+    trapz(LAYERS, eta, func, &params.phi_22[face]);
+    params.phi_22[face] = delta * params.phi_22[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = 1 - R[i] * U[i] * (U[i] * U[i] + W[i] * W[i]);
+    trapz(LAYERS, eta, func, &params.phi_1_ast[face]);
+    params.phi_1_ast[face] = delta * params.phi_1_ast[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - R[i] * W[i] * (U[i] * U[i] + W[i] * W[i]);
+    trapz(LAYERS, eta, func, &params.phi_2_ast[face]);
+    params.phi_2_ast[face] = delta * params.phi_2_ast[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = 1 - U[i];
+    trapz(LAYERS, eta, func, &params.delta_1_line[face]);
+    params.delta_1_line[face] = delta * params.delta_1_line[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - W[i];
+    trapz(LAYERS, eta, func, &params.delta_2_line[face]);
+    params.delta_2_line[face] = delta * params.delta_2_line[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - Psi * R[i] * U[i] * (U[i] * U[i] + W[i] * W[i]);
+    trapz(LAYERS, eta, func, &params.theta_1_o[face]);
+    params.theta_1_o[face] = delta * params.theta_1_o[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - Psi * R[i] * W[i] * (U[i] * U[i] + W[i] * W[i]);
+    trapz(LAYERS, eta, func, &params.theta_2_o[face]);
+    params.theta_2_o[face] = delta * params.theta_2_o[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - Psi * U[i];
+    trapz(LAYERS, eta, func, &params.delta_1_o[face]);
+    params.delta_1_o[face] = delta * params.delta_1_o[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = - Psi * W[i];
+    trapz(LAYERS, eta, func, &params.delta_2_o[face]);
+    params.delta_2_o[face] = delta * params.delta_2_o[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = S[i] * dUdeta[i] + T[i] * dWdeta[i];
+    trapz(LAYERS, eta, func, &params.C_D[face]);
+    params.C_D[face] = delta * params.C_D[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = S[i] * dWdeta[i] - T[i] * dUdeta[i];
+    trapz(LAYERS, eta, func, &params.C_D_x[face]);
+    params.C_D_x[face] = delta * params.C_D_x[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = Psi * (S[i] * dUdeta[i] + T[i] * dWdeta[i]); //func[i] = S[i] * (dpsideta[i] * U[i] + psi[i] * dUdeta[i]) + T[i] * (dpsideta[i] * W[i] + psi[i] * dWdeta[i]);
+    trapz(LAYERS, eta, func, &params.C_D_o[face]);
+    params.C_D_o[face] = delta * params.C_D_o[face];
+
+    params.S0[face] = S[0];
+    params.T0[face] = T[0];
+
+    for (i = 0; i < LAYERS; i++) func[i] = S[i] * U[i];
+    trapz(LAYERS, eta, func, &params.Ktauxx[face]);
+    params.Ktauxx[face] = delta * params.Ktauxx[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = S[i] * W[i];
+    trapz(LAYERS, eta, func, &params.Ktauxy[face]);
+    params.Ktauxy[face] = delta * params.Ktauxy[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = T[i] * U[i];
+    trapz(LAYERS, eta, func, &params.Ktauyx[face]);
+    params.Ktauyx[face] = delta * params.Ktauyx[face];
+
+    for (i = 0; i < LAYERS; i++) func[i] = T[i] * W[i];
+    trapz(LAYERS, eta, func, &params.Ktauyy[face]);
+    params.Ktauyy[face] = delta * params.Ktauyy[face];
+
+    double Re_theta;
+    double func1;
+    double func2;
+    double H_k;
+    double fn;
+    
+    H_k = (absValue(division(params.delta_1_ast[face], params.phi_11[face] - params.delta_1_ast[face])) - 0.29 * mach * mach) / (1 + 0.113 * mach * mach);
+
+    if (H_k < 1.8) {
+        
+        params.Sx[face] = 0.0;
 
     } else {
 
-        double P_tau_x;
-        double P_tau_y;
-        double D_tau_x;
-        double D_tau_y;
+        Re_theta = velocity * density * absValue(params.phi_11[face] - params.delta_1_ast[face]) / viscosity;
+        func1 = 0.01 * sqrt(pow(2.4 * H_k - 3.7 + 2.5 * tanh(1.5 * H_k - 4.65), 2) + 0.25);
+        func2 = pow(10, (1.415 / (H_k - 1) - 0.489) * tanh(20 / (H_k - 1) - 12.9) + 3.295 / (H_k - 1) + 0.44);
+        fn = func1 * (Re_theta - func2);
 
-        double *P_tau_x_func = (double *)malloc(profiles->n * sizeof(double));
-        double *P_tau_y_func = (double *)malloc(profiles->n * sizeof(double));
-        double *D_tau_x_func = (double *)malloc(profiles->n * sizeof(double));
-        double *D_tau_y_func = (double *)malloc(profiles->n * sizeof(double));
-
-        double tau_x, tau_y;
-
-        for (int i = 0; i < profiles->n; i++) {
-
-            P_tau_x_func[i] = freestream->density * profiles->R[i] * (freestream->velocity * freestream->velocity / profiles->R[i]) * sqrt(pow(profiles->S[i], 2) + pow(profiles->T[i], 2)) * freestream->velocity * profiles->dU_deta[i];
-            P_tau_y_func[i] = freestream->density * profiles->R[i] * (freestream->velocity * freestream->velocity / profiles->R[i]) * sqrt(pow(profiles->S[i], 2) + pow(profiles->T[i], 2)) * freestream->velocity * profiles->dW_deta[i];
-
-            tau_x = freestream->velocity * freestream->velocity * profiles->S[i] / profiles->R[i];
-            tau_y = freestream->velocity * freestream->velocity * profiles->T[i] / profiles->R[i];
-
-            D_tau_x_func[i] = 2 * freestream->density * profiles->R[i] * pow(pow(tau_x, 2) + pow(tau_y, 2), 0.25) * tau_x;
-            D_tau_y_func[i] = 2 * freestream->density * profiles->R[i] * pow(pow(tau_x, 2) + pow(tau_y, 2), 0.25) * tau_y;
+        if (fn < 0) {
+            params.Sx[face] = 0.0;
+        } else {
+            params.Sx[face] = amp * fn / ((params.phi_11[face] - params.delta_1_ast[face]) * density * velocity * velocity);
         }
 
-        integrate_trap(profiles->n, profiles->eta, P_tau_x_func, &P_tau_x, 1.0);
-        integrate_trap(profiles->n, profiles->eta, P_tau_y_func, &P_tau_y, 1.0);
-        integrate_trap(profiles->n, profiles->eta, D_tau_x_func, &D_tau_x, delta);
-        integrate_trap(profiles->n, profiles->eta, D_tau_y_func, &D_tau_y, delta);
+    }
 
-        integralDefect->S_tau_x = 0.30 * (P_tau_x - D_tau_x);
-        integralDefect->S_tau_y = 0.30 * (P_tau_y - D_tau_y);
+    H_k = (absValue(division(params.delta_2_ast[face], params.phi_11[face] - params.delta_1_ast[face])) - 0.29 * mach * mach) / (1 + 0.113 * mach * mach);
 
-        free(P_tau_x_func);
-        free(P_tau_y_func);
-        free(D_tau_x_func);
-        free(D_tau_y_func);
+    if (H_k < 1.8) {
+        
+        params.Sy[face] = 0.0;
+
+    } else {
+
+        Re_theta = velocity * density * absValue(params.phi_22[face] - params.delta_2_ast[face]) / viscosity;
+        func1 = 0.01 * sqrt(pow(2.4 * H_k - 3.7 + 2.5 * tanh(1.5 * H_k - 4.65), 2) + 0.25);
+        func2 = pow(10, (1.415 / (H_k - 1) - 0.489) * tanh(20 / (H_k - 1) - 12.9) + 3.295 / (H_k - 1) + 0.44);
+        fn = func1 * (Re_theta - func2);
+
+        if (fn < 0) {
+            params.Sy[face] = 0.0;
+        } else {
+            params.Sy[face] = amp * fn / ((params.phi_11[face] - params.delta_1_ast[face]) * density * velocity * velocity);
+        }
+        
+    }
+
+    // Free
+    free(eta);
+    free(U);
+    free(W);
+    free(dUdeta);
+    free(dWdeta);
+    free(S);
+    free(T);
+    free(R);
+    free(psi);
+    free(dpsideta);
+    free(func);
+
+}
+
+void mallocIntegralThickness(int nf, struct IntegralThickness *params) {
+    params->C_D = (double*)malloc(nf * sizeof(double));
+    params->C_D_o = (double*)malloc(nf * sizeof(double));
+    params->C_D_x = (double*)malloc(nf * sizeof(double));
+    params->delta_1_ast = (double*)malloc(nf * sizeof(double));
+    params->delta_1_line = (double*)malloc(nf * sizeof(double));
+    params->delta_1_o = (double*)malloc(nf * sizeof(double));
+    params->delta_2_ast = (double*)malloc(nf * sizeof(double));
+    params->delta_2_line = (double*)malloc(nf * sizeof(double));
+    params->delta_2_o = (double*)malloc(nf * sizeof(double));
+    params->Ktauxx = (double*)malloc(nf * sizeof(double));
+    params->Ktauxy = (double*)malloc(nf * sizeof(double));
+    params->Ktauyx = (double*)malloc(nf * sizeof(double));
+    params->Ktauyy = (double*)malloc(nf * sizeof(double));
+    params->phi_11 = (double*)malloc(nf * sizeof(double));
+    params->phi_12 = (double*)malloc(nf * sizeof(double));
+    params->phi_1_ast = (double*)malloc(nf * sizeof(double));
+    params->phi_21 = (double*)malloc(nf * sizeof(double));
+    params->phi_22 = (double*)malloc(nf * sizeof(double));
+    params->phi_2_ast = (double*)malloc(nf * sizeof(double));
+    params->S0 = (double*)malloc(nf * sizeof(double));
+    params->Sx = (double*)malloc(nf * sizeof(double));
+    params->Sy = (double*)malloc(nf * sizeof(double));
+    params->T0 = (double*)malloc(nf * sizeof(double));
+    params->theta_1_o = (double*)malloc(nf * sizeof(double));
+    params->theta_2_o = (double*)malloc(nf * sizeof(double));
+}
+
+void calculateParametersGradients(int nf, int *faces, double *vertices, double *faceCenters, double *velx, double *vely, double *velz, double *transpiration, double *e3, struct VerticeConnection *vertices_connection, struct FaceGradients *facesGradients) {
+    
+    /* Parameters */
+    int face, i;
+    struct Point vel, vel1, vel2, vel3;
+    double scalar_vel;
+    double velNorm, velNorm1, velNorm2, velNorm3;
+    struct Point s1, s2, s3;
+    double phi, phi1, phi2, phi3;
+    double u, v;
+    struct Point point1, point2, point3;
+    struct Point n1, n2, n3;
+
+    for (face = 0; face < nf; face++) {
+    
+        /* Face and edges velocities */
+        vel.x = velx[face] - transpiration[face] * e3[3 * face];
+        vel.y = vely[face] - transpiration[face] * e3[3 * face + 1];
+        vel.z = velz[face] - transpiration[face] * e3[3 * face + 2];
+
+        vel1.x = 0.0; vel1.y = 0.0; vel1.z = 0.0;
+        vel2.x = 0.0; vel2.y = 0.0; vel2.z = 0.0;
+        vel3.x = 0.0; vel3.y = 0.0; vel3.z = 0.0;
+
+        // Vertice 1
+        for(i = 0; i < vertices_connection[faces[3 * face]].n; i++) {
+            vel1.x = vel1.x + velx[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i];
+            vel1.y = vel1.y + vely[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i];
+            vel1.z = vel1.z + velz[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i];
+        }
+
+        scalar_vel = vel1.x * e3[3 * face] + vel1.y * e3[3 * face + 1] + vel1.z * e3[3 * face + 2];
+
+        vel1.x = vel1.x - scalar_vel * e3[3 * face];
+        vel1.y = vel1.y - scalar_vel * e3[3 * face + 1];
+        vel1.z = vel1.z - scalar_vel * e3[3 * face + 2];
+
+        // Vertice 2
+        for(i = 0; i < vertices_connection[faces[3 * face + 1]].n; i++) {
+            vel2.x = vel2.x + velx[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i];
+            vel2.y = vel2.y + vely[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i];
+            vel2.z = vel2.z + velz[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i];
+        }
+
+        scalar_vel = vel2.x * e3[3 * face] + vel2.y * e3[3 * face + 1] + vel2.z * e3[3 * face + 2];
+
+        vel2.x = vel2.x - scalar_vel * e3[3 * face];
+        vel2.y = vel2.y - scalar_vel * e3[3 * face + 1];
+        vel2.z = vel2.z - scalar_vel * e3[3 * face + 2];
+
+        // Vertice 3
+        for(i = 0; i < vertices_connection[faces[3 * face + 2]].n; i++) {
+            vel3.x = vel3.x + velx[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i];
+            vel3.y = vel3.y + vely[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i];
+            vel3.z = vel3.z + velz[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i];
+        }
+
+        scalar_vel = vel3.x * e3[3 * face] + vel3.y * e3[3 * face + 1] + vel3.z * e3[3 * face + 2];
+
+        vel3.x = vel3.x - scalar_vel * e3[3 * face];
+        vel3.y = vel3.y - scalar_vel * e3[3 * face + 1];
+        vel3.z = vel3.z - scalar_vel * e3[3 * face + 2];
+
+        /* Vel norm */
+        
+
+        velNorm = (vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+        velNorm1 = (vel1.x * vel1.x + vel1.y * vel1.y + vel1.z * vel1.z) / velNorm;
+        velNorm2 = (vel2.x * vel2.x + vel2.y * vel2.y + vel2.z * vel2.z) / velNorm;
+        velNorm3 = (vel3.x * vel3.x + vel3.y * vel3.y + vel3.z * vel3.z) / velNorm;
+
+        /* Angles */
+        
+
+        /* Face and edges angles */
+        scalar_vel = sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+        s1.x = vel.x / scalar_vel; s1.y = vel.y / scalar_vel; s1.z = vel.z / scalar_vel;
+        s3.x = e3[3 * face]; s3.y = e3[3 * face + 1]; s3.z = e3[3 * face + 2];
+        s2 = cross(s3, s1);
+
+        phi = 0.0;
+
+        // Vertice 1
+        phi1 = atan2(s2.x * vel1.x + s2.y * vel1.y + s2.z * vel1.z, s1.x * vel1.x + s1.y * vel1.y + s1.z * vel1.z);
+
+        // Vertice 2
+        phi2 = atan2(s2.x * vel2.x + s2.y * vel2.y + s2.z * vel2.z, s1.x * vel2.x + s1.y * vel2.y + s1.z * vel2.z);
+
+        // Vertice 3
+        phi3 = atan2(s2.x * vel3.x + s2.y * vel3.y + s2.z * vel3.z, s1.x * vel3.x + s1.y * vel3.y + s1.z * vel3.z);
+
+        /* Gradients */
+        
+
+        // grad_q2
+        point1.x = (vertices[3 * faces[3 * face]] - faceCenters[3 * face]) * s1.x + (vertices[3 * faces[3 * face] + 1] - faceCenters[3 * face + 1]) * s1.y + (vertices[3 * faces[3 * face] + 2] - faceCenters[3 * face + 2]) * s1.z;
+        point1.y = (vertices[3 * faces[3 * face]] - faceCenters[3 * face]) * s2.x + (vertices[3 * faces[3 * face] + 1] - faceCenters[3 * face + 1]) * s2.y + (vertices[3 * faces[3 * face] + 2] - faceCenters[3 * face + 2]) * s2.z;
+        point1.z = velNorm1 - 1.0;
+
+        point2.x = (vertices[3 * faces[3 * face + 1]] - faceCenters[3 * face]) * s1.x + (vertices[3 * faces[3 * face + 1] + 1] - faceCenters[3 * face + 1]) * s1.y + (vertices[3 * faces[3 * face + 1] + 2] - faceCenters[3 * face + 2]) * s1.z;
+        point2.y = (vertices[3 * faces[3 * face + 1]] - faceCenters[3 * face]) * s2.x + (vertices[3 * faces[3 * face + 1] + 1] - faceCenters[3 * face + 1]) * s2.y + (vertices[3 * faces[3 * face + 1] + 2] - faceCenters[3 * face + 2]) * s2.z;
+        point2.z = velNorm2 - 1.0;
+
+        point3.x = (vertices[3 * faces[3 * face + 2]] - faceCenters[3 * face]) * s1.x + (vertices[3 * faces[3 * face + 2] + 1] - faceCenters[3 * face + 1]) * s1.y + (vertices[3 * faces[3 * face + 2] + 2] - faceCenters[3 * face + 2]) * s1.z;
+        point3.y = (vertices[3 * faces[3 * face + 2]] - faceCenters[3 * face]) * s2.x + (vertices[3 * faces[3 * face + 2] + 1] - faceCenters[3 * face + 1]) * s2.y + (vertices[3 * faces[3 * face + 2] + 2] - faceCenters[3 * face + 2]) * s2.z;
+        point3.z = velNorm3 - 1.0;
+
+        n1 = cross(point1, point2);
+        n2 = cross(point2, point3);
+        n3 = cross(point3, point1);
+
+        facesGradients[face].grad_u2_x = - (n1.x / n1.z + n2.x / n2.z + n3.x / n3.z);
+        facesGradients[face].grad_u2_y = - (n1.y / n1.z + n2.y / n2.z + n3.y / n3.z);
+
+        // grad_q2
+        point1.z = phi1;
+        point2.z = phi2;
+        point3.z = phi3;
+
+        n1 = cross(point1, point2);
+        n2 = cross(point2, point3);
+        n3 = cross(point3, point1);
+
+        facesGradients[face].grad_phi_x = - (n1.x / n1.z + n2.x / n2.z + n3.x / n3.z);
+        facesGradients[face].grad_phi_y = - (n1.y / n1.z + n2.y / n2.z + n3.y / n3.z);
 
     }
 
-    double *K_tau_xx_func = (double *)malloc(profiles->n * sizeof(double));
-    double *K_tau_xy_func = (double *)malloc(profiles->n * sizeof(double));
-    double *K_tau_yx_func = (double *)malloc(profiles->n * sizeof(double));
-    double *K_tau_yy_func = (double *)malloc(profiles->n * sizeof(double));
+}
 
-    double tau_x, tau_y;
+void calculateParametersDivergents(int face, double *velNorm, int *faces, double *vertices, double *velx, double *vely, double *velz, double *transpiration, double *e3, struct VerticeConnection *vertices_connection, struct IntegralThickness params, struct FaceDivergents *faceDivergents) {
 
-    for (int i = 0; i < profiles->n; i++) {
+    /* Face base vectors */
+    struct Point s12, s23, s31, l1, l2, l3, l1_aux, l2_aux, l3_aux, s1, s2, s3;
+    double s12_norm, s23_norm, s31_norm, vec_norm;
 
-        tau_x = freestream->velocity * freestream->velocity * profiles->S[i] / profiles->R[i];
-        tau_y = freestream->velocity * freestream->velocity * profiles->T[i] / profiles->R[i];
+    // Edges
+    s12.x = vertices[3 * faces[3 * face + 1]] - vertices[3 * faces[3 * face]];
+    s12.y = vertices[3 * faces[3 * face + 1] + 1] - vertices[3 * faces[3 * face] + 1];
+    s12.z = vertices[3 * faces[3 * face + 1] + 2] - vertices[3 * faces[3 * face] + 2];
 
-        K_tau_xx_func[i] = profiles->R[i] * freestream->density * tau_x * freestream->velocity * profiles->U[i];
-        K_tau_xy_func[i] = profiles->R[i] * freestream->density * tau_x * freestream->velocity * profiles->W[i];
-        K_tau_yx_func[i] = profiles->R[i] * freestream->density * tau_y * freestream->velocity * profiles->U[i];
-        K_tau_yy_func[i] = profiles->R[i] * freestream->density * tau_y * freestream->velocity * profiles->W[i];
+    s12_norm = norm(s12); s12.x = s12.x / s12_norm; s12.y = s12.y / s12_norm; s12.z = s12.z / s12_norm;
+
+    s23.x = vertices[3 * faces[3 * face + 2]] - vertices[3 * faces[3 * face + 1]];
+    s23.y = vertices[3 * faces[3 * face + 2] + 1] - vertices[3 * faces[3 * face + 1] + 1];
+    s23.z = vertices[3 * faces[3 * face + 2] + 2] - vertices[3 * faces[3 * face + 1] + 2];
+
+    s23_norm = norm(s23); s23.x = s23.x / s23_norm; s23.y = s23.y / s23_norm; s23.z = s23.z / s23_norm;
+
+    s31.x = vertices[3 * faces[3 * face]] - vertices[3 * faces[3 * face + 2]];
+    s31.y = vertices[3 * faces[3 * face] + 1] - vertices[3 * faces[3 * face + 2] + 1];
+    s31.z = vertices[3 * faces[3 * face] + 2] - vertices[3 * faces[3 * face + 2] + 2];
+
+    s31_norm = norm(s31); s31.x = s31.x / s31_norm; s31.y = s31.y / s31_norm; s31.z = s31.z / s31_norm;
+
+    // Velocity base
+    s3.x = e3[3 * face]; s3.y = e3[3 * face + 1]; s3.z = e3[3 * face + 2];
+    s1.x = velx[face] - transpiration[face] * s3.x; s1.y = vely[face] - transpiration[face] * s3.y; s1.z = velz[face] - transpiration[face] * s3.z; vec_norm = norm(s1); s1.x = s1.x / vec_norm; s1.y = s1.y / vec_norm; s1.z = s1.z / vec_norm;
+    s2 = cross(s3, s1);
+
+    // Lateral vectors
+    l1_aux = cross(s12, s3);
+    l2_aux = cross(s23, s3);
+    l3_aux = cross(s31, s3);
+
+    l1.x = dot(s1, l1_aux); l1.y = dot(s2, l1_aux); l1.z = 0.0;
+    l2.x = dot(s1, l2_aux); l2.y = dot(s2, l2_aux); l2.z = 0.0;
+    l3.x = dot(s1, l3_aux); l3.y = dot(s2, l3_aux); l3.z = 0.0;
+
+    // Vertices values
+    int i;
+    double a, b;
+    double delta_1_ast_1 = 0.0; double delta_2_ast_1 = 0.0; double delta_1_ast_2 = 0.0; double delta_2_ast_2 = 0.0; double delta_1_ast_3 = 0.0; double delta_2_ast_3 = 0.0;
+    double phi_11_1 = 0.0; double phi_12_1 = 0.0; double phi_11_2 = 0.0; double phi_12_2 = 0.0; double phi_11_3 = 0.0; double phi_12_3 = 0.0;
+    double phi_21_1 = 0.0; double phi_22_1 = 0.0; double phi_21_2 = 0.0; double phi_22_2 = 0.0; double phi_21_3 = 0.0; double phi_22_3 = 0.0;
+    double phi_1_ast_1 = 0.0; double phi_2_ast_1 = 0.0; double phi_1_ast_2 = 0.0; double phi_2_ast_2 = 0.0; double phi_1_ast_3 = 0.0; double phi_2_ast_3 = 0.0;
+    double theta_1_o_1 = 0.0; double theta_2_o_1 = 0.0; double theta_1_o_2 = 0.0; double theta_2_o_2 = 0.0; double theta_1_o_3 = 0.0; double theta_2_o_3 = 0.0;
+    double ktau_xx_1 = 0.0; double ktau_xy_1 = 0.0; double ktau_xx_2 = 0.0; double ktau_xy_2 = 0.0; double ktau_xx_3 = 0.0; double ktau_xy_3 = 0.0;
+    double ktau_yx_1 = 0.0; double ktau_yy_1 = 0.0; double ktau_yx_2 = 0.0; double ktau_yy_2 = 0.0; double ktau_yx_3 = 0.0; double ktau_yy_3 = 0.0;
+    
+    double factor_1;
+    double factor_2;
+    double factor_3;
+
+    for(i = 0; i < vertices_connection[faces[3 * face]].n; i++) {
+
+        factor_1 = division(velNorm[vertices_connection[faces[3 * face]].faces[i]], velNorm[face]);
+        factor_2 = pow(division(velNorm[vertices_connection[faces[3 * face]].faces[i]], velNorm[face]), 2);
+        factor_3 = pow(division(velNorm[vertices_connection[faces[3 * face]].faces[i]], velNorm[face]), 3);
+
+        // delta_1_ast / delta_2_ast
+        delta_1_ast_1 = delta_1_ast_1 + params.delta_1_ast[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_1;
+        delta_2_ast_1 = delta_2_ast_1 + params.delta_2_ast[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_1;
+
+        // phi_11 / phi_12
+        phi_11_1 = phi_11_1 + params.phi_11[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_2;
+        phi_12_1 = phi_12_1 + params.phi_12[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_2;
+
+        // phi_21 / phi_22
+        phi_21_1 = phi_21_1 + params.phi_21[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_2;
+        phi_22_1 = phi_22_1 + params.phi_22[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_2;
+
+        // phi_1_ast / phi_2_ast
+        phi_1_ast_1 = phi_1_ast_1 + params.phi_1_ast[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+        phi_2_ast_1 = phi_2_ast_1 + params.phi_2_ast[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+
+        // theta_1_o / theta_2_o
+        theta_1_o_1 = theta_1_o_1 + params.theta_1_o[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+        theta_2_o_1 = theta_2_o_1 + params.theta_2_o[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+
+        // ktau_xx / ktau_xy
+        ktau_xx_1 = ktau_xx_1 + params.Ktauxx[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+        ktau_xy_1 = ktau_xy_1 + params.Ktauxy[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+
+        ktau_yx_1 = ktau_yx_1 + params.Ktauyx[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+        ktau_yy_1 = ktau_yy_1 + params.Ktauyy[vertices_connection[faces[3 * face]].faces[i]] * vertices_connection[faces[3 * face]].coeffs[i] * factor_3;
+
     }
 
-    integrate_trap(profiles->n, profiles->eta, K_tau_xx_func, &integralDefect->K_tau_xx, delta);
-    integrate_trap(profiles->n, profiles->eta, K_tau_xy_func, &integralDefect->K_tau_xy, delta);
-    integrate_trap(profiles->n, profiles->eta, K_tau_yx_func, &integralDefect->K_tau_yx, delta);
-    integrate_trap(profiles->n, profiles->eta, K_tau_yy_func, &integralDefect->K_tau_yy, delta);
+    for(i = 0; i < vertices_connection[faces[3 * face + 1]].n; i++) {
+        
+        factor_1 = division(velNorm[vertices_connection[faces[3 * face + 1]].faces[i]], velNorm[face]);
+        factor_2 = pow(division(velNorm[vertices_connection[faces[3 * face + 1]].faces[i]], velNorm[face]), 2);
+        factor_3 = pow(division(velNorm[vertices_connection[faces[3 * face + 1]].faces[i]], velNorm[face]), 3);
 
-    free(K_tau_xx_func);
-    free(K_tau_xy_func);
-    free(K_tau_yx_func);
-    free(K_tau_yy_func);
+        // delta_1_ast / delta_2_ast
+        delta_1_ast_2 = delta_1_ast_2 + params.delta_1_ast[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_1;
+        delta_2_ast_2 = delta_2_ast_2 + params.delta_2_ast[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_1;
+
+        // phi_11 / phi_12
+        phi_11_2 = phi_11_2 + params.phi_11[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_2;
+        phi_12_2 = phi_12_2 + params.phi_12[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_2;
+
+        // phi_21 / phi_22
+        phi_21_2 = phi_21_2 + params.phi_21[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_2;
+        phi_22_2 = phi_22_2 + params.phi_22[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_2;
+
+        // phi_1_ast / phi_2_ast
+        phi_1_ast_2 = phi_1_ast_2 + params.phi_1_ast[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+        phi_2_ast_2 = phi_2_ast_2 + params.phi_2_ast[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+
+        // theta_1_o / theta_2_o
+        theta_1_o_2 = theta_1_o_2 + params.theta_1_o[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+        theta_2_o_2 = theta_2_o_2 + params.theta_2_o[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+
+        // ktau_xx / ktau_xy
+        ktau_xx_2 = ktau_xx_2 + params.Ktauxx[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+        ktau_xy_2 = ktau_xy_2 + params.Ktauxy[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+
+        ktau_yx_2 = ktau_yx_2 + params.Ktauyx[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+        ktau_yy_2 = ktau_yy_2 + params.Ktauyy[vertices_connection[faces[3 * face + 1]].faces[i]] * vertices_connection[faces[3 * face + 1]].coeffs[i] * factor_3;
+
+    }
+
+    for(i = 0; i < vertices_connection[faces[3 * face + 2]].n; i++) {
+
+        factor_1 = division(velNorm[vertices_connection[faces[3 * face + 2]].faces[i]], velNorm[face]);
+        factor_2 = pow(division(velNorm[vertices_connection[faces[3 * face + 2]].faces[i]], velNorm[face]), 2);
+        factor_3 = pow(division(velNorm[vertices_connection[faces[3 * face + 2]].faces[i]], velNorm[face]), 3);
+
+        // delta_1_ast / delta_2_ast
+        delta_1_ast_3 = delta_1_ast_3 + params.delta_1_ast[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_1;
+        delta_2_ast_3 = delta_2_ast_3 + params.delta_2_ast[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_1;
+
+        // phi_11 / phi_12
+        phi_11_3 = phi_11_3 + params.phi_11[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_2;
+        phi_12_3 = phi_12_3 + params.phi_12[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_2;
+
+        // phi_21 / phi_22
+        phi_21_3 = phi_21_3 + params.phi_21[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_2;
+        phi_22_3 = phi_22_3 + params.phi_22[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_2;
+
+        // phi_1_ast / phi_2_ast
+        phi_1_ast_3 = phi_1_ast_3 + params.phi_1_ast[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+        phi_2_ast_3 = phi_2_ast_3 + params.phi_2_ast[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+
+        // theta_1_o / theta_2_o
+        theta_1_o_3 = theta_1_o_3 + params.theta_1_o[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+        theta_2_o_3 = theta_2_o_3 + params.theta_2_o[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+
+        // ktau_xx / ktau_xy
+        ktau_xx_3 = ktau_xx_3 + params.Ktauxx[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+        ktau_xy_3 = ktau_xy_3 + params.Ktauxy[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+
+        ktau_yx_3 = ktau_yx_3 + params.Ktauyx[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+        ktau_yy_3 = ktau_yy_3 + params.Ktauyy[vertices_connection[faces[3 * face + 2]].faces[i]] * vertices_connection[faces[3 * face + 2]].coeffs[i] * factor_3;
+
+    }
+
+    // M
+    faceDivergents->div_delta_1_2_ast = s12_norm * 0.5 * ((delta_1_ast_1 * l1.x + delta_2_ast_1 * l1.y) + (delta_1_ast_2 * l1.x + delta_2_ast_2 * l1.y));
+    faceDivergents->div_delta_1_2_ast = faceDivergents->div_delta_1_2_ast + s23_norm * 0.5 * ((delta_1_ast_2 * l2.x + delta_2_ast_2 * l2.y) + (delta_1_ast_3 * l2.x + delta_2_ast_3 * l2.y));
+    faceDivergents->div_delta_1_2_ast = faceDivergents->div_delta_1_2_ast + s31_norm * 0.5 * ((delta_1_ast_3 * l3.x + delta_2_ast_3 * l3.y) + (delta_1_ast_1 * l3.x + delta_2_ast_1 * l3.y));
+
+    // J
+    faceDivergents->div_phi_11_12 = s12_norm * 0.5 * ((phi_11_1 * l1.x + phi_12_1 * l1.y) + (phi_11_2 * l1.x + phi_12_2 * l1.y));
+    faceDivergents->div_phi_11_12 = faceDivergents->div_phi_11_12 + s23_norm * 0.5 * ((phi_11_2 * l2.x + phi_12_2 * l2.y) + (phi_11_3 * l2.x + phi_12_3 * l2.y));
+    faceDivergents->div_phi_11_12 = faceDivergents->div_phi_11_12 + s31_norm * 0.5 * ((phi_11_3 * l3.x + phi_12_3 * l3.y) + (phi_11_1 * l3.x + phi_12_1 * l3.y));
+
+    faceDivergents->div_phi_21_22 = s12_norm * 0.5 * ((phi_21_1 * l1.x + phi_22_1 * l1.y) + (phi_21_2 * l1.x + phi_22_2 * l1.y));
+    faceDivergents->div_phi_21_22 = faceDivergents->div_phi_21_22 + s23_norm * 0.5 * ((phi_21_2 * l2.x + phi_22_2 * l2.y) + (phi_21_3 * l2.x + phi_22_3 * l2.y));
+    faceDivergents->div_phi_21_22 = faceDivergents->div_phi_21_22 + s31_norm * 0.5 * ((phi_21_3 * l3.x + phi_22_3 * l3.y) + (phi_21_1 * l3.x + phi_22_1 * l3.y));
+
+    // E
+    faceDivergents->div_phi_1_2_ast = s12_norm * 0.5 * ((phi_1_ast_1 * l1.x + phi_2_ast_1 * l1.y) + (phi_1_ast_2 * l1.x + phi_2_ast_2 * l1.y));
+    faceDivergents->div_phi_1_2_ast = faceDivergents->div_phi_1_2_ast + s23_norm * 0.5 * ((phi_1_ast_2 * l2.x + phi_2_ast_2 * l2.y) + (phi_1_ast_3 * l2.x + phi_2_ast_3 * l2.y));
+    faceDivergents->div_phi_1_2_ast = faceDivergents->div_phi_1_2_ast + s31_norm * 0.5 * ((phi_1_ast_3 * l3.x + phi_2_ast_3 * l3.y) + (phi_1_ast_1 * l3.x + phi_2_ast_1 * l3.y));
+
+    // Ko
+    faceDivergents->div_theta_1_2_o = s12_norm * 0.5 * ((theta_1_o_1 * l1.x + theta_2_o_1 * l1.y) + (theta_1_o_2 * l1.x + theta_2_o_2 * l1.y));
+    faceDivergents->div_theta_1_2_o = faceDivergents->div_theta_1_2_o + s23_norm * 0.5 * ((theta_1_o_2 * l2.x + theta_2_o_2 * l2.y) + (theta_1_o_3 * l2.x + theta_2_o_3 * l2.y));
+    faceDivergents->div_theta_1_2_o = faceDivergents->div_theta_1_2_o + s31_norm * 0.5 * ((theta_1_o_3 * l3.x + theta_2_o_3 * l3.y) + (theta_1_o_1 * l3.x + theta_2_o_1 * l3.y));
+
+    // Ktau
+    faceDivergents->div_Ktau_xx_xy = s12_norm * 0.5 * ((ktau_xx_1 * l1.x + ktau_xy_1 * l1.y) + (ktau_xx_2 * l1.x + ktau_xy_2 * l1.y));
+    faceDivergents->div_Ktau_xx_xy = faceDivergents->div_Ktau_xx_xy + s23_norm * 0.5 * ((ktau_xx_2 * l2.x + ktau_xy_2 * l2.y) + (ktau_xx_3 * l2.x + ktau_xy_3 * l2.y));
+    faceDivergents->div_Ktau_xx_xy = faceDivergents->div_Ktau_xx_xy + s31_norm * 0.5 * ((ktau_xx_3 * l3.x + ktau_xy_3 * l3.y) + (ktau_xx_1 * l3.x + ktau_xy_1 * l3.y));
+
+    faceDivergents->div_Ktau_yx_yy = s12_norm * 0.5 * ((ktau_yx_1 * l1.x + ktau_yy_1 * l1.y) + (ktau_yx_2 * l1.x + ktau_yy_2 * l1.y));
+    faceDivergents->div_Ktau_yx_yy = faceDivergents->div_Ktau_yx_yy + s23_norm * 0.5 * ((ktau_yx_2 * l2.x + ktau_yy_2 * l2.y) + (ktau_yx_3 * l2.x + ktau_yy_3 * l2.y));
+    faceDivergents->div_Ktau_yx_yy = faceDivergents->div_Ktau_yx_yy + s31_norm * 0.5 * ((ktau_yx_3 * l3.x + ktau_yy_3 * l3.y) + (ktau_yx_1 * l3.x + ktau_yy_1 * l3.y));
 }
 
-void calculateEquationsParams(double delta,
-                              double A,
-                              double B,
-                              double Psi,
-                              double Ctau1,
-                              double Ctau2,
-                              struct FreestreamParameters *freestream,
-                              struct ProfileParameters *profiles,
-                              struct IntegralThicknessParameters *integralThickness,
-                              struct IntegralDefectParameters *integralDefect,
-                              struct EquationsParameters *params)
-{
+void getIntegralThicknessParams(int face, struct IntegralThickness params, double *out) {
 
-    /* Profiles */
-    calculateProfiles(delta, A, B, Psi, Ctau1, Ctau2, freestream, profiles);
+    out[0] = params.C_D[face];
+    out[1] = params.C_D_o[face];
+    out[2] = params.C_D_x[face];
+    out[3] = params.delta_1_ast[face];
+    out[4] = params.delta_1_line[face];
+    out[5] = params.delta_1_o[face];
+    out[6] = params.delta_2_ast[face];
+    out[7] = params.delta_2_line[face];
+    out[8] = params.delta_2_o[face];
+    out[9] = params.Ktauxx[face];
+    out[10] = params.Ktauxy[face];
+    out[11] = params.Ktauyx[face];
+    out[12] = params.Ktauyy[face];
+    out[13] = params.phi_11[face];
+    out[14] = params.phi_12[face];
+    out[15] = params.phi_1_ast[face];
+    out[16] = params.phi_21[face];
+    out[17] = params.phi_22[face];
+    out[18] = params.phi_2_ast[face];
+    out[19] = params.S0[face];
+    out[20] = params.Sx[face];
+    out[21] = params.Sy[face];
+    out[22] = params.T0[face];
+    out[23] = params.theta_1_o[face];
+    out[24] = params.theta_2_o[face];
 
-    /* Integral thickness */
-    calculateIntegralThickness(profiles, integralThickness, delta, Psi);
-
-    /* Integral defect */
-    calculateIntegralDefect(profiles, integralThickness, freestream, integralDefect, delta, A, B, Ctau1, Ctau2);
-
-    /* Assing params */
-    params->D = integralDefect->D;
-    params->D_o = integralDefect->D_o;
-    params->D_x = integralDefect->D_x;
-    params->E_x = integralDefect->E_x;
-    params->E_y = integralDefect->E_y;
-    params->J_xx = integralDefect->J_xx;
-    params->J_xy = integralDefect->J_xy;
-    params->J_yx = integralDefect->J_yx;
-    params->J_yy = integralDefect->J_yy;
-    params->K_o_x = integralDefect->K_o_x;
-    params->K_o_y = integralDefect->K_o_y;
-    params->K_tau_xx = integralDefect->K_tau_xx;
-    params->K_tau_xy = integralDefect->K_tau_xy;
-    params->K_tau_yx = integralDefect->K_tau_yx;
-    params->K_tau_yy = integralDefect->K_tau_yy;
-    params->M_x = integralDefect->M_x;
-    params->M_y = integralDefect->M_y;
-    params->Q_o_x = integralDefect->Q_o_x;
-    params->Q_o_y = integralDefect->Q_o_y;
-    params->Q_x = integralDefect->Q_x;
-    params->Q_y = integralDefect->Q_y;
-    params->S_tau_x = integralDefect->S_tau_x;
-    params->S_tau_y = integralDefect->S_tau_y;
-    params->tau_w_x = integralDefect->tau_w_x;
-    params->tau_w_y = integralDefect->tau_w_y;
-    params->vel = freestream->velocity;
-    params->density = freestream->density;
 }
 
-void calculateDivergents(int face,
-                         int *faces,
-                         struct VerticeConnection *vertices_connection,
-                         struct EquationsParameters *params,
-                         double area,
-                         double *p1, double *p2, double *p3) {
+void setIntegralThicknessParams(int face, struct IntegralThickness params, double *out) {
+
+    params.C_D[face] = out[0];
+    params.C_D_o[face] = out[1];
+    params.C_D_x[face] = out[2];
+    params.delta_1_ast[face] = out[3];
+    params.delta_1_line[face] = out[4];
+    params.delta_1_o[face] = out[5];
+    params.delta_2_ast[face] = out[6];
+    params.delta_2_line[face] = out[7];
+    params.delta_2_o[face] = out[8];
+    params.Ktauxx[face] = out[9];
+    params.Ktauxy[face] = out[10];
+    params.Ktauyx[face] = out[11];
+    params.Ktauyy[face] = out[12];
+    params.phi_11[face] = out[13];
+    params.phi_12[face] = out[14];
+    params.phi_1_ast[face] = out[15];
+    params.phi_21[face] = out[16];
+    params.phi_22[face] = out[17];
+    params.phi_2_ast[face] = out[18];
+    params.S0[face] = out[19];
+    params.Sx[face] = out[20];
+    params.Sy[face] = out[21];
+    params.T0[face] = out[22];
+    params.theta_1_o[face] = out[23];
+    params.theta_2_o[face] = out[24];
+
+}
+
+void calculateGradient(int face, struct FaceDivergents faceDivergents, double *tau_w_x, double *tau_w_y, double density, struct FaceEquations *equations, double eps, double *velNorm, int *faces, double *vertices, double *velx, double *vely, double *velz, double *transpiration, double *e3, struct VerticeConnection *vertices_connection, struct FacesConnection *faces_connection, struct FaceGradients *facesGradients, double *gradient, struct IntegralThickness params, struct IntegralThickness params_delta, struct IntegralThickness params_A, struct IntegralThickness params_B, struct IntegralThickness params_Psi, struct IntegralThickness params_amp) {
 
     /* Parameters */
-    int k; // Counters
+    double transpiration_aux;
+    int i;
+    // struct FaceDivergents faceDivergents;
+    double *params_1 = (double*)malloc(25 * sizeof(double));
+    double *params_2 = (double*)malloc(25 * sizeof(double));
+    double *obj_func_eps = (double*)malloc(5 * sizeof(double));
+    double momentum_x, momentum_y, kinetic_energy, lateral_curvature, shear_stress_x, shear_stress_y;
 
-    struct Point point_1, point_2, point_3; // Face corners
-    struct Point v_1, v_2, v_3;             // Face corners values
-    struct Point point_lateral;             // Face edge orthogonal vector
-    int index_1, index_2, index_3;          // Vertices indexes
+    double f1 = 1.0;
+    double f2 = 1.0;
+    double f3 = 1.0;
+    double f4 = 1.0;
+    double f5 = 1.0;
+    double f6 = 1.0;
 
-    /* Initialize */
-    point_1.x = p1[face];
-    point_1.y = p1[face + 1];
-    point_1.z = 0.0;
-    point_2.x = p2[face];
-    point_2.y = p2[face + 1];
-    point_2.z = 0.0;
-    point_3.x = p3[face];
-    point_3.y = p3[face + 1];
-    point_3.z = 0.0;
+    /* Reference values */
+    transpiration_aux = density * velNorm[face] * faceDivergents.div_delta_1_2_ast;
+    tau_w_x[face] = density * velNorm[face] * velNorm[face] * params.S0[face];
+    tau_w_y[face] = density * velNorm[face] * velNorm[face] * params.T0[face];
 
-    v_1.z = 0.0;
-    v_2.z = 0.0;
-    v_3.z = 0.0;
+    // calculateParametersDivergents(face, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, params, &faceDivergents);
 
-    index_1 = faces[3 * face];
-    index_2 = faces[3 * face + 1];
-    index_3 = faces[3 * face + 2];
+    equations->momentum_x = faceDivergents.div_phi_11_12 - faceDivergents.div_delta_1_2_ast - params.S0[face];
+    equations->momentum_y = faceDivergents.div_phi_21_22 - params.T0[face];
+    equations->kinetic_energy = faceDivergents.div_phi_1_2_ast - faceDivergents.div_delta_1_2_ast - (params.delta_1_line[face] * facesGradients[face].grad_u2_x + params.delta_2_line[face] * facesGradients[face].grad_u2_y) - 2 * params.C_D[face];
+    equations->lateral_curvature = faceDivergents.div_theta_1_2_o + (params.phi_1_ast[face] * facesGradients[face].grad_phi_x + params.phi_2_ast[face] * facesGradients[face].grad_phi_y) + 0.5 * (params.delta_1_line[face] * facesGradients[face].grad_u2_y - params.delta_2_line[face] * facesGradients[face].grad_u2_x) - (params.delta_1_o[face] * facesGradients[face].grad_u2_x + params.delta_2_o[face] * facesGradients[face].grad_u2_y) + params.C_D_x[face] - 2 * params.C_D_o[face];
+    equations->shear_stress_x = faceDivergents.div_Ktau_xx_xy - params.Sx[face];
+    equations->shear_stress_y = faceDivergents.div_Ktau_yx_yy - params.Sy[face];
+    equations->obj = f1 * pow(equations->momentum_x, 2) + f2 * pow(equations->momentum_y, 2) + f3 * pow(equations->kinetic_energy, 2) + f4 * pow(equations->lateral_curvature, 2) + f5 * pow(equations->shear_stress_x, 2) + f6 * pow(equations->shear_stress_y, 2);
 
-    /* Div(M) */
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
+    /* Current face derivatives */
 
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].M_x;
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].M_y;
-    }
+    // delta
+    getIntegralThicknessParams(face, params, params_1);
+    getIntegralThicknessParams(face, params_delta, params_2);
+    setIntegralThicknessParams(face, params, params_2);
 
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].M_x;
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].M_y;
-    }
+    // calculateParametersDivergents(face, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, params, &faceDivergents);
 
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].M_x;
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].M_y;
-    }
+    momentum_x = faceDivergents.div_phi_11_12 - faceDivergents.div_delta_1_2_ast - params.S0[face];
+    momentum_y = faceDivergents.div_phi_21_22 - params.T0[face];
+    kinetic_energy = faceDivergents.div_phi_1_2_ast - faceDivergents.div_delta_1_2_ast - (params.delta_1_line[face] * facesGradients[face].grad_u2_x + params.delta_2_line[face] * facesGradients[face].grad_u2_y) - 2 * params.C_D[face];
+    lateral_curvature = faceDivergents.div_theta_1_2_o + (params.phi_1_ast[face] * facesGradients[face].grad_phi_x + params.phi_2_ast[face] * facesGradients[face].grad_phi_y) + 0.5 * (params.delta_1_line[face] * facesGradients[face].grad_u2_y - params.delta_2_line[face] * facesGradients[face].grad_u2_x) - (params.delta_1_o[face] * facesGradients[face].grad_u2_x + params.delta_2_o[face] * facesGradients[face].grad_u2_y) + params.C_D_x[face] - 2 * params.C_D_o[face];
+    shear_stress_x = faceDivergents.div_Ktau_xx_xy - params.Sx[face];
+    shear_stress_y = faceDivergents.div_Ktau_yx_yy - params.Sy[face];
 
-    calculateDivergence(point_1, point_2, point_3, v_1, v_2, v_3, area, &params[face].div_M);
+    kinetic_energy = 0.2 * kinetic_energy + 0.8 * equations->kinetic_energy;
+    lateral_curvature = 0.2 * lateral_curvature + 0.8 * equations->lateral_curvature;
 
-    /* Div(Jx) */
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
+    obj_func_eps[0] = f1 * pow(momentum_x, 2) + f2 * pow(momentum_y, 2) + f3 * pow(kinetic_energy, 2) + f4 * pow(lateral_curvature, 2) + f5 * pow(shear_stress_x, 2) + f6 * pow(shear_stress_y, 2);
 
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].J_xx;
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].J_xy;
-    }
+    // A
+    getIntegralThicknessParams(face, params_A, params_2);
+    setIntegralThicknessParams(face, params, params_2);
 
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].J_xx;
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].J_xy;
-    }
+    // calculateParametersDivergents(face, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, params, &faceDivergents);
 
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].J_xx;
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].J_xy;
-    }
+    momentum_x = faceDivergents.div_phi_11_12 - faceDivergents.div_delta_1_2_ast - params.S0[face];
+    momentum_y = faceDivergents.div_phi_21_22 - params.T0[face];
+    kinetic_energy = faceDivergents.div_phi_1_2_ast - faceDivergents.div_delta_1_2_ast - (params.delta_1_line[face] * facesGradients[face].grad_u2_x + params.delta_2_line[face] * facesGradients[face].grad_u2_y) - 2 * params.C_D[face];
+    lateral_curvature = faceDivergents.div_theta_1_2_o + (params.phi_1_ast[face] * facesGradients[face].grad_phi_x + params.phi_2_ast[face] * facesGradients[face].grad_phi_y) + 0.5 * (params.delta_1_line[face] * facesGradients[face].grad_u2_y - params.delta_2_line[face] * facesGradients[face].grad_u2_x) - (params.delta_1_o[face] * facesGradients[face].grad_u2_x + params.delta_2_o[face] * facesGradients[face].grad_u2_y) + params.C_D_x[face] - 2 * params.C_D_o[face];
+    shear_stress_x = faceDivergents.div_Ktau_xx_xy - params.Sx[face];
+    shear_stress_y = faceDivergents.div_Ktau_yx_yy - params.Sy[face];
+    
+    momentum_x = 0.2 * momentum_x + 0.8 * equations->momentum_x;
+    momentum_y = 0.2 * momentum_y + 0.8 * equations->momentum_y;
+    
+    obj_func_eps[1] = f1 * pow(momentum_x, 2) + f2 * pow(momentum_y, 2) + f3 * pow(kinetic_energy, 2) + f4 * pow(lateral_curvature, 2) + f5 * pow(shear_stress_x, 2) + f6 * pow(shear_stress_y, 2);
 
-    calculateDivergence(point_1, point_2, point_3, v_1, v_2, v_3, area, &params[face].div_J_x);
+    // B
+    getIntegralThicknessParams(face, params_B, params_2);
+    setIntegralThicknessParams(face, params, params_2);
 
-    /* Div(Jy) */
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
+    // calculateParametersDivergents(face, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, params, &faceDivergents);
+    
+    momentum_x = faceDivergents.div_phi_11_12 - faceDivergents.div_delta_1_2_ast - params.S0[face];
+    momentum_y = faceDivergents.div_phi_21_22 - params.T0[face];
+    kinetic_energy = faceDivergents.div_phi_1_2_ast - faceDivergents.div_delta_1_2_ast - (params.delta_1_line[face] * facesGradients[face].grad_u2_x + params.delta_2_line[face] * facesGradients[face].grad_u2_y) - 2 * params.C_D[face];
+    lateral_curvature = faceDivergents.div_theta_1_2_o + (params.phi_1_ast[face] * facesGradients[face].grad_phi_x + params.phi_2_ast[face] * facesGradients[face].grad_phi_y) + 0.5 * (params.delta_1_line[face] * facesGradients[face].grad_u2_y - params.delta_2_line[face] * facesGradients[face].grad_u2_x) - (params.delta_1_o[face] * facesGradients[face].grad_u2_x + params.delta_2_o[face] * facesGradients[face].grad_u2_y) + params.C_D_x[face] - 2 * params.C_D_o[face];
+    shear_stress_x = faceDivergents.div_Ktau_xx_xy - params.Sx[face];
+    shear_stress_y = faceDivergents.div_Ktau_yx_yy - params.Sy[face];
+    
+    momentum_x = 0.2 * momentum_x + 0.8 * equations->momentum_x;
+    momentum_y = 0.2 * momentum_y + 0.8 * equations->momentum_y;
 
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].J_yx;
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].J_yy;
-    }
+    obj_func_eps[2] = f1 * pow(momentum_x, 2) + f2 * pow(momentum_y, 2) + f3 * pow(kinetic_energy, 2) + f4 * pow(lateral_curvature, 2) + f5 * pow(shear_stress_x, 2) + f6 * pow(shear_stress_y, 2);
 
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].J_yx;
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].J_yy;
-    }
+    // Psi
+    getIntegralThicknessParams(face, params_Psi, params_2);
+    setIntegralThicknessParams(face, params, params_2);
 
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].J_yx;
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].J_yy;
-    }
+    // calculateParametersDivergents(face, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, params, &faceDivergents);
+    
+    momentum_x = faceDivergents.div_phi_11_12 - faceDivergents.div_delta_1_2_ast - params.S0[face];
+    momentum_y = faceDivergents.div_phi_21_22 - params.T0[face];
+    kinetic_energy = faceDivergents.div_phi_1_2_ast - faceDivergents.div_delta_1_2_ast - (params.delta_1_line[face] * facesGradients[face].grad_u2_x + params.delta_2_line[face] * facesGradients[face].grad_u2_y) - 2 * params.C_D[face];
+    lateral_curvature = faceDivergents.div_theta_1_2_o + (params.phi_1_ast[face] * facesGradients[face].grad_phi_x + params.phi_2_ast[face] * facesGradients[face].grad_phi_y) + 0.5 * (params.delta_1_line[face] * facesGradients[face].grad_u2_y - params.delta_2_line[face] * facesGradients[face].grad_u2_x) - (params.delta_1_o[face] * facesGradients[face].grad_u2_x + params.delta_2_o[face] * facesGradients[face].grad_u2_y) + params.C_D_x[face] - 2 * params.C_D_o[face];
+    shear_stress_x = faceDivergents.div_Ktau_xx_xy - params.Sx[face];
+    shear_stress_y = faceDivergents.div_Ktau_yx_yy - params.Sy[face];
 
-    calculateDivergence(point_1, point_2, point_3, v_1, v_2, v_3, area, &params[face].div_J_y);
+    momentum_x = 0.2 * momentum_x + 0.8 * equations->momentum_x;
+    momentum_y = 0.2 * momentum_y + 0.8 * equations->momentum_y;
 
-    /* Div(E) */
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
+    obj_func_eps[3] = f1 * pow(momentum_x, 2) + f2 * pow(momentum_y, 2) + f3 * pow(kinetic_energy, 2) + f4 * pow(lateral_curvature, 2) + f5 * pow(shear_stress_x, 2) + f6 * pow(shear_stress_y, 2);
 
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].E_x;
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].E_y;
-    }
+    // amp
+    getIntegralThicknessParams(face, params_amp, params_2);
+    setIntegralThicknessParams(face, params, params_2);
 
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].E_x;
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].E_y;
-    }
+    // calculateParametersDivergents(face, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, params, &faceDivergents);
+    
+    momentum_x = faceDivergents.div_phi_11_12 - faceDivergents.div_delta_1_2_ast - params.S0[face];
+    momentum_y = faceDivergents.div_phi_21_22 - params.T0[face];
+    kinetic_energy = faceDivergents.div_phi_1_2_ast - faceDivergents.div_delta_1_2_ast - (params.delta_1_line[face] * facesGradients[face].grad_u2_x + params.delta_2_line[face] * facesGradients[face].grad_u2_y) - 2 * params.C_D[face];
+    lateral_curvature = faceDivergents.div_theta_1_2_o + (params.phi_1_ast[face] * facesGradients[face].grad_phi_x + params.phi_2_ast[face] * facesGradients[face].grad_phi_y) + 0.5 * (params.delta_1_line[face] * facesGradients[face].grad_u2_y - params.delta_2_line[face] * facesGradients[face].grad_u2_x) - (params.delta_1_o[face] * facesGradients[face].grad_u2_x + params.delta_2_o[face] * facesGradients[face].grad_u2_y) + params.C_D_x[face] - 2 * params.C_D_o[face];
+    shear_stress_x = faceDivergents.div_Ktau_xx_xy - params.Sx[face];
+    shear_stress_y = faceDivergents.div_Ktau_yx_yy - params.Sy[face];
+    obj_func_eps[4] = f1 * pow(momentum_x, 2) + f2 * pow(momentum_y, 2) + f3 * pow(kinetic_energy, 2) + f4 * pow(lateral_curvature, 2) + f5 * pow(shear_stress_x, 2) + f6 * pow(shear_stress_y, 2);
 
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].E_x;
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].E_y;
-    }
+    setIntegralThicknessParams(face, params, params_1);
 
-    calculateDivergence(point_1, point_2, point_3, v_1, v_2, v_3, area, &params[face].div_E);
+    // Calculate grandient
+    gradient[0] = (obj_func_eps[0] - equations->obj) / eps;
+    gradient[1] = (obj_func_eps[1] - equations->obj) / eps;
+    gradient[2] = (obj_func_eps[2] - equations->obj) / eps;
+    gradient[3] = (obj_func_eps[3] - equations->obj) / eps;
+    gradient[4] = (obj_func_eps[4] - equations->obj) / eps;
 
-    /* Div(ko) */
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
+    transpiration[face] = absValue(transpiration_aux);
 
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].K_o_x;
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].K_o_y;
-    }
+    /* Obj func to compare */
+    equations->obj = f1 * absValue(equations->momentum_x) + f2 * absValue(equations->momentum_y) + f3 * absValue(equations->kinetic_energy) + f4 * absValue(equations->lateral_curvature) + f5 * absValue(equations->shear_stress_x) + f6 * absValue(equations->shear_stress_y);
 
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].K_o_x;
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].K_o_y;
-    }
-
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].K_o_x;
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].K_o_y;
-    }
-
-    calculateDivergence(point_1, point_2, point_3, v_1, v_2, v_3, area, &params[face].div_K_o);
-
-    /* Div(ktaux) */
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
-
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].K_tau_xx;
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].K_tau_xy;
-    }
-
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].K_tau_xx;
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].K_tau_xy;
-    }
-
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].K_tau_xx;
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].K_tau_xy;
-    }
-
-    calculateDivergence(point_1, point_2, point_3, v_1, v_2, v_3, area, &params[face].div_K_tau_x);
-
-    /* Div(ktauy) */
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
-
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].K_tau_yx;
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * params[vertices_connection[index_1].faces[k]].K_tau_yy;
-    }
-
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].K_tau_yx;
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * params[vertices_connection[index_2].faces[k]].K_tau_yy;
-    }
-
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].K_tau_yx;
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * params[vertices_connection[index_3].faces[k]].K_tau_yy;
-    }
-
-    calculateDivergence(point_1, point_2, point_3, v_1, v_2, v_3, area, &params[face].div_K_tau_y);
 }
 
-void calculateGradients(int face,
-                        int *faces,
-                        struct VerticeConnection *vertices_connection,
-                        struct EquationsParameters *params,
-                        double *e1, double *e2, double *e3,
-                        double *p1, double *p2, double *p3,
-                        double *velNorm,
-                        double *velx, double *vely, double *velz,
-                        double *transpiration)
-{
-
-    /* Parameters */
-    int k; // Counters
-
-    struct Point point_1, point_2, point_3;    // Face corners
-    struct Point v_1, v_2, v_3;                // Face corners values
-    struct Point e1_point, e2_point, e3_point; // Face base vectors
-    struct Point vel_point;                    // Face velocity
-    struct Point point_lateral;                // Face edge orthogonal vector
-    int index_1, index_2, index_3;             // Vertices indexes
-    double aux_1, aux_2;
-
-    /* Initialize */
-    e1_point.x = e1[3 * face];
-    e1_point.y = e1[3 * face + 1];
-    e1_point.z = e1[3 * face + 2];
-    e2_point.x = e2[3 * face];
-    e2_point.y = e2[3 * face + 1];
-    e2_point.z = e2[3 * face + 2];
-    e3_point.x = e3[3 * face];
-    e3_point.y = e3[3 * face + 1];
-    e3_point.z = e3[3 * face + 2];
-
-    point_1.x = p1[2 * face];
-    point_1.y = p1[2 * face + 1];
-    point_1.z = 0.0;
-    point_2.x = p2[2 * face];
-    point_2.y = p2[2 * face + 1];
-    point_2.z = 0.0;
-    point_3.x = p3[2 * face];
-    point_3.y = p3[2 * face + 1];
-    point_3.z = 0.0;
-
-    v_1.z = 0.0;
-    v_2.z = 0.0;
-    v_3.z = 0.0;
-
-    index_1 = faces[3 * face];
-    index_2 = faces[3 * face + 1];
-    index_3 = faces[3 * face + 2];
-
-    vel_point.x = velx[face];
-    vel_point.y = vely[face];
-    vel_point.z = velz[face];
-
-    // pow(velNorm, 2)
-    point_1.z = 0.0;
-    point_2.z = 0.0;
-    point_3.z = 0.0;
-
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        point_1.z = point_1.z + vertices_connection[index_1].coeffs[k] * velNorm[vertices_connection[index_1].faces[k]] * velNorm[vertices_connection[index_1].faces[k]];
+double signDouble(double a) {
+    if (a < 0.0) {
+        return - 1.0;
+    } else {
+        return 1.0;
     }
-
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        point_2.z = point_2.z + vertices_connection[index_2].coeffs[k] * velNorm[vertices_connection[index_2].faces[k]] * velNorm[vertices_connection[index_2].faces[k]];
-    }
-
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        point_3.z = point_3.z + vertices_connection[index_3].coeffs[k] * velNorm[vertices_connection[index_3].faces[k]] * velNorm[vertices_connection[index_3].faces[k]];
-    }
-
-    calculateGradient(velNorm[face] * velNorm[face], point_1, point_2, point_3, e1_point, e2_point, e3_point, vel_point, transpiration[face], &params[face].grad_q2_x, &params[face].grad_q2_y);
-
-    // Phi
-    v_1.x = 0.0;
-    v_1.y = 0.0;
-    v_1.z = 0.0;
-    v_2.x = 0.0;
-    v_2.y = 0.0;
-    v_2.z = 0.0;
-    v_3.x = 0.0;
-    v_3.y = 0.0;
-    v_3.z = 0.0;
-
-    for (k = 0; k < vertices_connection[index_1].n; k++)
-    {
-        v_1.x = v_1.x + vertices_connection[index_1].coeffs[k] * velx[vertices_connection[index_1].faces[k]];
-        v_1.y = v_1.y + vertices_connection[index_1].coeffs[k] * vely[vertices_connection[index_1].faces[k]];
-        v_1.z = v_1.z + vertices_connection[index_1].coeffs[k] * velz[vertices_connection[index_1].faces[k]];
-    }
-
-    for (k = 0; k < vertices_connection[index_2].n; k++)
-    {
-        v_2.x = v_2.x + vertices_connection[index_2].coeffs[k] * velx[vertices_connection[index_2].faces[k]];
-        v_2.y = v_2.y + vertices_connection[index_2].coeffs[k] * vely[vertices_connection[index_2].faces[k]];
-        v_2.z = v_2.z + vertices_connection[index_2].coeffs[k] * velz[vertices_connection[index_2].faces[k]];
-    }
-
-    for (k = 0; k < vertices_connection[index_3].n; k++)
-    {
-        v_3.x = v_3.x + vertices_connection[index_3].coeffs[k] * velx[vertices_connection[index_3].faces[k]];
-        v_3.y = v_3.y + vertices_connection[index_3].coeffs[k] * vely[vertices_connection[index_3].faces[k]];
-        v_3.z = v_3.z + vertices_connection[index_3].coeffs[k] * velz[vertices_connection[index_3].faces[k]];
-    }
-
-    // Remove vel in e3 direction
-    aux_1 = e3_point.x * vel_point.x + e3_point.y * vel_point.y + e3_point.z * vel_point.z;
-    vel_point.x = vel_point.x - e3_point.x * aux_1;
-    vel_point.y = vel_point.y - e3_point.y * aux_1;
-    vel_point.z = vel_point.z - e3_point.z * aux_1;
-
-    aux_1 = e3_point.x * v_1.x + e3_point.y * v_1.y + e3_point.z * v_1.z;
-    v_1.x = v_1.x - e3_point.x * aux_1;
-    v_1.y = v_1.y - e3_point.y * aux_1;
-    v_1.z = v_1.z - e3_point.z * aux_1;
-
-    aux_1 = e3_point.x * v_2.x + e3_point.y * v_2.y + e3_point.z * v_2.z;
-    v_2.x = v_2.x - e3_point.x * aux_1;
-    v_2.y = v_2.y - e3_point.y * aux_1;
-    v_2.z = v_2.z - e3_point.z * aux_1;
-
-    aux_1 = e3_point.x * v_3.x + e3_point.y * v_3.y + e3_point.z * v_3.z;
-    v_3.x = v_3.x - e3_point.x * aux_1;
-    v_3.y = v_3.y - e3_point.y * aux_1;
-    v_3.z = v_3.z - e3_point.z * aux_1;
-
-    // Unary vectors
-    aux_1 = norm(vel_point);
-    vel_point.x = vel_point.x / aux_1;
-    vel_point.y = vel_point.y / aux_1;
-    vel_point.z = vel_point.z / aux_1;
-    aux_1 = norm(v_1);
-    v_1.x = v_1.x / aux_1;
-    v_1.y = v_1.y / aux_1;
-    v_1.z = v_1.z / aux_1;
-    aux_1 = norm(v_2);
-    v_2.x = v_2.x / aux_1;
-    v_2.y = v_2.y / aux_1;
-    v_2.z = v_2.z / aux_1;
-    aux_1 = norm(v_3);
-    v_3.x = v_3.x / aux_1;
-    v_3.y = v_3.y / aux_1;
-    v_3.z = v_3.z / aux_1;
-
-    point_lateral = cross(vel_point, e3_point);
-
-    aux_1 = point_lateral.x * v_1.x + point_lateral.y * v_1.y + point_lateral.z * v_1.z;
-    aux_2 = vel_point.x * v_1.x + vel_point.y * v_1.y + vel_point.z * v_1.z;
-    point_1.z = atan(aux_1 / aux_2);
-
-    aux_1 = point_lateral.x * v_2.x + point_lateral.y * v_2.y + point_lateral.z * v_2.z;
-    aux_2 = vel_point.x * v_2.x + vel_point.y * v_2.y + vel_point.z * v_2.z;
-    point_2.z = atan(aux_1 / aux_2);
-
-    aux_1 = point_lateral.x * v_3.x + point_lateral.y * v_3.y + point_lateral.z * v_3.z;
-    aux_2 = vel_point.x * v_3.x + vel_point.y * v_3.y + vel_point.z * v_3.z;
-    point_3.z = atan(aux_1 / aux_2);
-
-    vel_point.x = velx[face];
-    vel_point.y = vely[face];
-    vel_point.z = velz[face];
-
-    calculateGradient(0.0, point_1, point_2, point_3, e1_point, e2_point, e3_point, vel_point, transpiration[face], &params[face].grad_phi_x, &params[face].grad_phi_y);
-}
-
-void calculateObjectiveFunction(struct EquationsParameters params,
-                                double *obj,
-                                double *momentum_x,
-                                double *momentum_y,
-                                double *kinetic_energy,
-                                double *lateral_curvature,
-                                double *shear_stress_x,
-                                double *shear_stress_y)
-{
-
-    /* Face integral equations */
-    *momentum_x = params.div_J_x - params.vel * params.div_M - params.tau_w_x;
-    *momentum_y = params.div_J_y - params.tau_w_y;
-    *kinetic_energy = params.div_E - params.vel * params.vel * params.div_M - params.density * (params.Q_x * params.grad_q2_x + params.Q_y * params.grad_q2_y) - 2 * params.D;
-    *lateral_curvature = params.div_K_o + (params.E_x * params.grad_phi_x + params.E_y * params.grad_phi_y) + 0.5 * params.density * (params.Q_x * params.grad_q2_y - params.Q_y * params.grad_q2_x) - params.density * (params.Q_o_x * params.grad_q2_x + params.Q_o_y * params.grad_q2_y) + params.D_x - 2 * params.D_o;
-    *shear_stress_x = params.div_K_tau_x - params.S_tau_x;
-    *shear_stress_y = params.div_K_tau_y - params.S_tau_y;
-
-    /* Objective function */
-    *obj = pow(*momentum_x, 2) + pow(*momentum_y, 2) + pow(*kinetic_energy, 2) + pow(*lateral_curvature, 2) + pow(*shear_stress_x, 2) + pow(*shear_stress_y, 2);
-
-    // *obj = absValue(*momentum_x) + absValue(*momentum_y) + absValue(*kinetic_energy) + absValue(*lateral_curvature) + absValue(*shear_stress_x) + absValue(*shear_stress_y);
-}
-
-void calculateObjectiveFunction2(int inter,
-                                 struct EquationsParameters params,
-                                 double *obj,
-                                 double *momentum_x,
-                                 double *momentum_y,
-                                 double *kinetic_energy,
-                                 double *lateral_curvature,
-                                 double *shear_stress_x,
-                                 double *shear_stress_y,
-                                 double velocity) {
-
-    /* Face integral equations */
-    *momentum_x = params.div_J_x - params.vel * params.div_M - params.tau_w_x;
-    *momentum_y = params.div_J_y - params.tau_w_y;
-    *kinetic_energy = params.div_E - params.vel * params.vel * params.div_M - params.density * (params.Q_x * params.grad_q2_x + params.Q_y * params.grad_q2_y) - 2 * params.D;
-    *lateral_curvature = params.div_K_o + (params.E_x * params.grad_phi_x + params.E_y * params.grad_phi_y) + 0.5 * params.density * (params.Q_x * params.grad_q2_y - params.Q_y * params.grad_q2_x) - params.density * (params.Q_o_x * params.grad_q2_x + params.Q_o_y * params.grad_q2_y) + params.D_x - 2 * params.D_o;
-    *shear_stress_x = params.div_K_tau_x - params.S_tau_x;
-    *shear_stress_y = params.div_K_tau_y - params.S_tau_y;
-
-    /* Objective function */
-    *obj = pow(*momentum_x / (velocity), 2) + pow(*momentum_y / (velocity), 2) + pow(*kinetic_energy * 1e-1 / (velocity * velocity), 2) + pow(*lateral_curvature * 1e-3 / (velocity), 2) + pow(*shear_stress_x * 1e-6, 2) + pow(*shear_stress_y * 1e-6, 2);
-
 }
 
 void solveBoundaryLayer(int nf,
                         int nv,
+                        struct Point freestream,
                         struct VerticeConnection *vertices_connection,
                         double *vertices,
                         int *faces,
                         double *facesCenter,
-                        double *facesArea,
+                        double *facesAreas,
                         double *e1, double *e2, double *e3,
                         double *p1, double *p2, double *p3,
                         double *transpiration,
-                        double *delta,
-                        double *A,
-                        double *B,
-                        double *Psi,
-                        double *Ctau1,
-                        double *Ctau2,
-                        double *tau_x,
-                        double *tau_y,
+                        double *delta, double *A, double *B, double *Psi, double *Ctau1, double *Ctau2,
+                        double *tau_wall_x, double *tau_wall_y,
                         double *velNorm,
                         double *velx, double *vely, double *velz,
                         double *mach,
-                        double density,
-                        double viscosity,
+                        double density, double viscosity,
                         double *cp,
-                        double sound_speed,
                         double *matrix, double *array,
                         double *matrixVelx, double *matrixVely, double *matrixVelz, double *arrayVel,
                         double *doublet,
                         double freestreamNorm) {
+    
+    /* Loop */
+    int i, j, k;
+
+    /* Equations parameters */
+    struct IntegralThickness integralThickness;
+    struct IntegralThickness integralThickness_delta;
+    struct IntegralThickness integralThickness_A;
+    struct IntegralThickness integralThickness_B;
+    struct IntegralThickness integralThickness_Psi;
+    struct IntegralThickness integralThickness_amp;
+
+    mallocIntegralThickness(nf, &integralThickness);
+    mallocIntegralThickness(nf, &integralThickness_delta);
+    mallocIntegralThickness(nf, &integralThickness_A);
+    mallocIntegralThickness(nf, &integralThickness_B);
+    mallocIntegralThickness(nf, &integralThickness_Psi);
+    mallocIntegralThickness(nf, &integralThickness_amp);
+
+    struct FaceGradients *facesGradients = (struct FaceGradients*)malloc(nf * sizeof(struct FaceGradients));
+    struct FaceDivergents *faceDivergents = (struct FaceDivergents*)malloc(nf * sizeof(struct FaceDivergents));
 
     /* Parameters */
-    int i, j, k; // loop variables
-    int int_max; // maximum interaction
+    double eps = 1e-8;
+    double *delta_list, *A_list, *B_list, *Psi_list, *amp_list;
+    double delta_norm, A_norm, Psi_norm;
 
-    struct EquationsParameters params_aux;        // aux
-    struct EquationsParameters *params;           // equations parameters
-    struct EquationsParameters *params_delta_eps; // equations parameters eith and delta + eps
-    struct EquationsParameters *params_A_eps;     // equations parameters eith and A + eps
-    struct EquationsParameters *params_B_eps;     // equations parameters eith and B + eps
-    struct EquationsParameters *params_Psi_eps;   // equations parameters eith and Psi + eps
-    struct EquationsParameters *params_Ctau1_eps; // equations parameters eith and Ctau1 + eps
-    struct EquationsParameters *params_Ctau2_eps; // equations parameters eith and Ctau2 + eps
+    delta_list = (double*)malloc(nf * sizeof(double));
+    A_list = (double*)malloc(nf * sizeof(double));
+    B_list = (double*)malloc(nf * sizeof(double));
+    Psi_list = (double*)malloc(nf * sizeof(double));
+    amp_list = (double*)malloc(nf * sizeof(double));
 
-    double *norm_delta_list; // normalized delta
-    double *norm_A_list;     // normalized A
-    double *norm_B_list;     // normalized B
-    double *norm_Psi_list;   // normalized Psi
-    double *norm_Ctau1_list; // normalized Ctau1
-    double *norm_Ctau2_list; // normalized Ctau2
-    double norm_delta;       // value to normalize delta
-    double norm_A;           // value to normalize A
-    double norm_B;           // value to normalize B
-    double norm_Psi;         // value to normalize Psi
-    double norm_Ctau1;       // value to normalize Ctau1
-    double norm_Ctau2;       // value to normalize Ctau2
-    double eps;              // small value to calculate derivatives
-    double step;
-    double step_ref;
+    // delta_norm = 10; A_norm = 1e4; B_norm = 1e5; Psi_norm = 1e4; amp_norm = 5e1;
+    delta_norm = 1.0; A_norm = 1.66 * velNorm[0]; Psi_norm = 0.017;
 
-    struct FreestreamParameters freestream;               // freestream parameters
-    struct ProfileParameters profiles;                    // face profiles
-    struct IntegralThicknessParameters integralThickness; // integral thickness paramters
-    struct IntegralDefectParameters integralDefect;       // integral defect parameters
-
-    struct FacesConnection *faces_connection; // faces connection
-
-    double *obj_func;      // objective functions
-    double *grad_obj_func; // objective function gradient
-    double max_error;      // Maximum error
-    double max_momentum_x, max_momentum_x_aux;
-    double max_momentum_y, max_momentum_y_aux;
-    double max_kinetic_energy, max_kinetic_energy_aux;
-    double max_lateral_curvature, max_lateral_curvature_aux;
-    double max_shear_stress_x, max_shear_stress_x_aux;
-    double max_shear_stress_y, max_shear_stress_y_aux;
-    double max_obj_func;
-    double *max_params_values;
-    double *max_grad_values;
-
-    /* Initialize */
-    int_max = 500;
-
-    params = (struct EquationsParameters *)malloc(nf * sizeof(struct EquationsParameters));
-    params_delta_eps = (struct EquationsParameters *)malloc(nf * sizeof(struct EquationsParameters));
-    params_A_eps = (struct EquationsParameters *)malloc(nf * sizeof(struct EquationsParameters));
-    params_B_eps = (struct EquationsParameters *)malloc(nf * sizeof(struct EquationsParameters));
-    params_Psi_eps = (struct EquationsParameters *)malloc(nf * sizeof(struct EquationsParameters));
-    params_Ctau1_eps = (struct EquationsParameters *)malloc(nf * sizeof(struct EquationsParameters));
-    params_Ctau2_eps = (struct EquationsParameters *)malloc(nf * sizeof(struct EquationsParameters));
-
-    norm_delta_list = (double *)malloc(nf * sizeof(double));
-    norm_A_list = (double *)malloc(nf * sizeof(double));
-    norm_B_list = (double *)malloc(nf * sizeof(double));
-    norm_Psi_list = (double *)malloc(nf * sizeof(double));
-    norm_Ctau1_list = (double *)malloc(nf * sizeof(double));
-    norm_Ctau2_list = (double *)malloc(nf * sizeof(double));
+    for (i = 0; i < nf; i++) if (1.66 * velNorm[i] > A_norm) A_norm = 1.66 * velNorm[i];
 
     double max_x_value = -10.0;
-    for (i = 0; i < nv; i++) if (vertices[3 * i] > max_x_value) max_x_value = vertices[3 * i];
-
-    for (i = 0; i < nf; i++) {
-        norm_delta_list[i] = (1 / 1e-3) * (0.001 + 5.0 * (max_x_value - facesCenter[3 * i]) / sqrt(density * freestreamNorm * (max_x_value - facesCenter[3 * i]) / viscosity));
-        norm_A_list[i] = 1.0;
-        norm_B_list[i] = 0.0;
-        norm_Psi_list[i] = 0.0;
-        norm_Ctau1_list[i] = 0.001;
-        norm_Ctau2_list[i] = 0.001;
+    double min_x_value = 10.0;
+    for (i = 0; i < nv; i++) {
+        if (vertices[3 * i] > max_x_value) max_x_value = vertices[3 * i];
+        if (vertices[3 * i] < min_x_value) min_x_value = vertices[3 * i];
     }
 
-    norm_delta = 1e-3;
-    norm_A = 1;
-    norm_B = 1;
-    norm_Psi = 1;
-    norm_Ctau1 = 1e-4;
-    norm_Ctau2 = 1e-4;
-    eps = 1e-8;
-    step_ref = 5e-2;
-    step = step_ref;
+    delta_norm = 5.0 * sqrt(viscosity * (max_x_value - min_x_value) / (freestreamNorm * density));
 
-    freestream.density = density;
-    freestream.viscosity = viscosity;
+    double delta_factor;
 
-    profiles.n = LAYERS;
-    profiles.eta = (double *)malloc(nf * sizeof(double));
-    profiles.U = (double *)malloc(nf * sizeof(double));
-    profiles.W = (double *)malloc(nf * sizeof(double));
-    profiles.S = (double *)malloc(nf * sizeof(double));
-    profiles.T = (double *)malloc(nf * sizeof(double));
-    profiles.R = (double *)malloc(nf * sizeof(double));
-    profiles.dU_deta = (double *)malloc(nf * sizeof(double));
-    profiles.dW_deta = (double *)malloc(nf * sizeof(double));
+    for (i = 0; i < nf; i++) {
 
-    faces_connection = (struct FacesConnection *)malloc(nf * sizeof(struct FacesConnection));
+        delta_factor = (freestream.x * e3[3 * i] + freestream.y * e3[3 * i + 1] + freestream.z * e3[3 * i + 2]) / freestreamNorm;
 
-    obj_func = (double *)malloc(300 * sizeof(double));
-    grad_obj_func = (double *)malloc(300 * sizeof(double));
-    max_params_values = (double *)malloc(6 * sizeof(double));
-    max_grad_values = (double *)malloc(6 * sizeof(double));
-
-    /* Faces connection */
-    calculateFacesConnection(nv, nf, faces, vertices_connection, faces_connection);
-
-    /* Print Interactions */
-    printf("\n      Interaction   Max. error      Momentum x       Momentum y    Kinetic Energy    Lateral Curv.   Shear Stress x   Shear Stress y\n");
-
-    /* Interaction loop */
-    for (i = 0; i < int_max; i++) {
-
-        /* Calculate integrals defect of all faces */
-        for (j = 0; j < nf; j++) {
-
-            freestream.velocity = velNorm[j];
-            freestream.mach = mach[j];
-
-            calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * norm_A_list[j], norm_B * norm_B_list[j], norm_Psi * norm_Psi_list[j], norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params[j]);
-            calculateEquationsParams(norm_delta * (norm_delta_list[j] + eps), norm_A * norm_A_list[j], norm_B * norm_B_list[j], norm_Psi * norm_Psi_list[j], norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params_delta_eps[j]);
-            calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * (norm_A_list[j] + eps), norm_B * norm_B_list[j], norm_Psi * norm_Psi_list[j], norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params_A_eps[j]);
-            calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * norm_A_list[j], norm_B * (norm_B_list[j] + eps), norm_Psi * norm_Psi_list[j], norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params_B_eps[j]);
-            calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * norm_A_list[j], norm_B * norm_B_list[j], norm_Psi * (norm_Psi_list[j] + eps), norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params_Psi_eps[j]);
-            calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * norm_A_list[j], norm_B * norm_B_list[j], norm_Psi * norm_Psi_list[j], norm_Ctau1 * (norm_Ctau1_list[j] + eps), norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params_Ctau1_eps[j]);
-            calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * norm_A_list[j], norm_B * norm_B_list[j], norm_Psi * norm_Psi_list[j], norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * (norm_Ctau2_list[j] + eps), &freestream, &profiles, &integralThickness, &integralDefect, &params_Ctau2_eps[j]);
+        if (delta_factor < 0) {
+            delta_factor = pow(1.0 + delta_factor, 2);
+        } else {
+            delta_factor = 1.0;
         }
 
-        /* Initial error */
-        max_error = -1.0;
+        delta_list[i] = (1 / delta_norm) * (delta_factor + 1e-8) * (5.0 * (max_x_value - facesCenter[3 * i]) / sqrt(density * freestreamNorm * (max_x_value - facesCenter[3 * i]) / viscosity));// (1 / delta_norm) * (0.000001 + 5.0 * (max_x_value - facesCenter[3 * i]) / sqrt(density * freestreamNorm * (max_x_value - facesCenter[3 * i]) / viscosity));
+        A_list[i] = (1 / A_norm) * 1.66 * velNorm[i];
+        B_list[i] = (1 / A_norm) * 0.0;
+        Psi_list[i] = (1 / Psi_norm) * 0.0;
+        amp_list[i] = log10(1e-10);
 
-        /* Faces loop */
+    }
+
+    /* Gradient */
+    double *gradient = (double*)malloc(5 * sizeof(double));
+    struct FaceEquations faceEquations;
+
+    /* Faces connection */
+    struct FacesConnection *faces_connection = (struct FacesConnection *)malloc(nf * sizeof(struct FacesConnection));
+    calculateFacesConnection(nv, nf, faces, vertices_connection, faces_connection);
+
+    /* Convergence */
+    int max_interactions = 200;
+    struct FaceEquations maxFaceEquations;
+    struct FaceEquations previousMaxFaceEquations;
+    double step_ref = 1e-2; // 1000
+    double *step = (double*)malloc(nf * sizeof(double));
+    double *current_obj = (double*)malloc(nf * sizeof(double));
+    double *previous_obj = (double*)malloc(nf * sizeof(double));
+
+    for (i = 0; i < nf; i++) step[i] = step_ref;
+
+    struct Point drag;
+    double *max_inc = (double*)malloc(5 * sizeof(double)); max_inc[0] = 1e-4 * delta_norm; max_inc[1] = 1e-5 * A_norm; max_inc[2] = 1e-5 * A_norm; max_inc[3] = 1e-5 * Psi_norm; max_inc[4] = 1;
+    double *steps = (double*)malloc(5 * sizeof(double));
+    double *max_ratio = (double*)malloc(5 * sizeof(double));
+    int check_max;
+    double *delta_list_aux = (double*)malloc(nf * sizeof(double));
+    double *A_list_aux = (double*)malloc(nf * sizeof(double));
+    double *B_list_aux = (double*)malloc(nf * sizeof(double));
+    double *Psi_list_aux = (double*)malloc(nf * sizeof(double));
+    double *amp_list_aux = (double*)malloc(nf * sizeof(double));
+    double alpha = 0.5;
+    double grad_val;
+    double **gradient_matrix = (double**)malloc(nf * sizeof(double*));
+
+    double *delta_v = (double*)malloc(nv * sizeof(double));
+    double *A_v = (double*)malloc(nv * sizeof(double));
+    double *B_v = (double*)malloc(nv * sizeof(double));
+    double *Psi_v = (double*)malloc(nv * sizeof(double));
+    double *amp_v = (double*)malloc(nv * sizeof(double));
+    
+    for (i = 0; i < nf; i++) {
+        gradient_matrix[i] = (double*)malloc(5 * (1 + faces_connection[i].n) * sizeof(double));
+    }
+
+    /* Surface base vectors */
+    struct Point *s1 = (struct Point*)malloc(nf * sizeof(struct Point));
+    struct Point *s2 = (struct Point*)malloc(nf * sizeof(struct Point));
+    struct Point s3;
+    double aux;
+
+    for (i = 0; i < nf; i++) {
+
+        aux = sqrt(velx[i] * velx[i] + vely[i] * vely[i] + velz[i] * velz[i]);
+        
+        s1[i].x = velx[i] / aux;
+        s1[i].y = vely[i] / aux;
+        s1[i].z = velz[i] / aux;
+
+        s3.x = e3[3 * i];
+        s3.y = e3[3 * i + 1];
+        s3.z = e3[3 * i + 2];
+
+        s2[i] = cross(s3, s1[i]);
+
+    }
+
+    printf("\n                                    Interactions\n");
+    printf("--------------------------------------------------------------------------------------------\n");
+
+    /* Loop */
+    for (i = 1; i <= max_interactions; i++) {
+
+        /* Calculate parameters gradients */
+        if (i == 1) calculateParametersGradients(nf, faces, vertices, facesCenter, velx, vely, velz, transpiration, e3, vertices_connection, facesGradients);
+
+        /* Calculate parameters */
+        for (j = 0; j < nf; j++) {
+            calculateParameters(j, delta_norm * delta_list[j], A_norm * A_list[j], A_norm * B_list[j], Psi_norm * Psi_list[j], pow(10, 1 * amp_list[j]), velNorm[j], density, viscosity, mach[j], integralThickness);
+            calculateParameters(j, delta_norm * (delta_list[j] + eps), A_norm * A_list[j], A_norm * B_list[j], Psi_norm * Psi_list[j], pow(10, 1 * amp_list[j]), velNorm[j], density, viscosity, mach[j], integralThickness_delta);
+            calculateParameters(j, delta_norm * delta_list[j], A_norm * (A_list[j] + eps), A_norm * B_list[j], Psi_norm * Psi_list[j], pow(10, 1 * amp_list[j]), velNorm[j], density, viscosity, mach[j], integralThickness_A);
+            calculateParameters(j, delta_norm * delta_list[j], A_norm * A_list[j], A_norm * (B_list[j] + eps), Psi_norm * Psi_list[j], pow(10, 1 * amp_list[j]), velNorm[j], density, viscosity, mach[j], integralThickness_B);
+            calculateParameters(j, delta_norm * delta_list[j], A_norm * A_list[j], A_norm * B_list[j], Psi_norm * (Psi_list[j] + eps), pow(10, 1 * amp_list[j]), velNorm[j], density, viscosity, mach[j], integralThickness_Psi);
+            calculateParameters(j, delta_norm * delta_list[j], A_norm * A_list[j], A_norm * B_list[j], Psi_norm * Psi_list[j], pow(10, 1 * (amp_list[j] + eps)), velNorm[j], density, viscosity, mach[j], integralThickness_amp);
+        }
+
+        /* Calculate divergents */
+        if ((i == 1) || (i % 2 == 0)) {
+            for (j = 0; j < nf; j++) {
+                calculateParametersDivergents(j, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, integralThickness, &faceDivergents[j]);
+            }
+        }
+
+        /* Loop over faces */
         for (j = 0; j < nf; j++) {
 
-            /* Calculate reference value */
-            calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
+            /* Calculate gradient */
+            calculateGradient(j, faceDivergents[j], tau_wall_x, tau_wall_y, density, &faceEquations, eps, velNorm, faces, vertices, velx, vely, velz, transpiration, e3, vertices_connection, faces_connection, facesGradients, gradient, integralThickness, integralThickness_delta, integralThickness_A, integralThickness_B, integralThickness_Psi, integralThickness_amp);
 
-            /* Surface shear stress */
-            tau_x[j] = params[j].tau_w_x;
-            tau_y[j] = params[j].tau_w_y;
+            // printf("g: %.2e, %.2e, %.2e, %.2e, %.2e\n", gradient[0], gradient[1], gradient[2], gradient[3], gradient[4]);
 
-            /* Ref. obj. func. */
-            calculateObjectiveFunction2(i, params[j], &obj_func[0], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
+            /* Increase */
+            delta_list[j] = delta_list[j] - step[j] * gradient[0];
+            A_list[j] = A_list[j] - step[j] * gradient[1];
+            B_list[j] = B_list[j] - step[j] * gradient[2];
+            Psi_list[j] = Psi_list[j] - step[j] * gradient[3];
+            amp_list[j] = amp_list[j] - step[j] * gradient[4];
 
-            /* Asing error */
-            if (obj_func[0] > max_error) {
-                max_error = obj_func[0];
-                max_momentum_x = max_momentum_x_aux;
-                max_momentum_y = max_momentum_y_aux;
-                max_kinetic_energy = max_kinetic_energy_aux;
-                max_lateral_curvature = max_lateral_curvature_aux;
-                max_shear_stress_x = max_shear_stress_x_aux;
-                max_shear_stress_y = max_shear_stress_y_aux;
+            if (delta_list[j] < 1e-10) delta_list[j] = 1e-10;
+            if (amp_list[j] < -1e3) amp_list[j] = -1e3;
 
-                max_params_values[0] = norm_delta_list[j];
-                max_params_values[1] = norm_A_list[j];
-                max_params_values[2] = norm_B_list[j];
-                max_params_values[3] = norm_Psi_list[j];
-                max_params_values[4] = norm_Ctau1_list[j];
-                max_params_values[5] = norm_Ctau2_list[j];
-
-                if (i == 0) max_obj_func = obj_func[0];
+            /* Error */
+            if (j == 0) {
+                previousMaxFaceEquations = faceEquations;
+            } else if (faceEquations.obj > previousMaxFaceEquations.obj) {
+                previousMaxFaceEquations = faceEquations;
             }
 
-            if (obj_func[0] / max_obj_func > 10000) break;
+            current_obj[j] = faceEquations.obj;
+        }
 
-            /* Save current face params */
-            params_aux = params[j];
+        if (i > 1) {
+            for (j = 0; j < nf; j++) {
+                if (division(current_obj[j], previous_obj[j]) > 1.0) {
+                    step[j] = step[j] / 1.1;
+                } else {
+                    step[j] = step[j] * 1.005;
+                }
+            }
+        }
 
-            //---------------------------//
-            /*          delta            */
-            //---------------------------//
-            /* Add delta eps params */
-            params[j] = params_delta_eps[j];
+        for (j = 0; j < nf; j++) previous_obj[j] = current_obj[j];
 
-            /* Calculate divergent and gradient */
-            calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
+        /* Diffusion */
+        for (k = 0; k < nv; k++) {
 
-            /* Obj. func. with delta eps */
-            calculateObjectiveFunction2(i, params[j], &obj_func[1], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
+            delta_v[k] = 0.0;
+            A_v[k] = 0.0;
+            B_v[k] = 0.0;
+            Psi_v[k] = 0.0;
+            amp_v[k] = 0.0;
 
-            //---------------------------//
-            /*            A              */
-            //---------------------------//
-            /* Add delta eps params */
-            params[j] = params_A_eps[j];
-
-            /* Calculate divergent and gradient */
-            calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-            /* Obj. func. with delta eps */
-            calculateObjectiveFunction2(i, params[j], &obj_func[2], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-            //---------------------------//
-            /*            B              */
-            //---------------------------//
-            /* Add delta eps params */
-            params[j] = params_B_eps[j];
-
-            /* Calculate divergent and gradient */
-            calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-            /* Obj. func. with delta eps */
-            calculateObjectiveFunction2(i, params[j], &obj_func[3], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-            //---------------------------//
-            /*           Psi             */
-            //---------------------------//
-            /* Add delta eps params */
-            params[j] = params_Psi_eps[j];
-
-            /* Calculate divergent and gradient */
-            calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-            /* Obj. func. with delta eps */
-            calculateObjectiveFunction2(i, params[j], &obj_func[4], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-            //---------------------------//
-            /*          Ctau1            */
-            //---------------------------//
-            /* Add delta eps params */
-            params[j] = params_Ctau1_eps[j];
-
-            /* Calculate divergent and gradient */
-            calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-            /* Obj. func. with delta eps */
-            calculateObjectiveFunction2(i, params[j], &obj_func[5], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-            //---------------------------//
-            /*          Ctau2            */
-            //---------------------------//
-            /* Add delta eps params */
-            params[j] = params_Ctau2_eps[j];
-
-            /* Calculate divergent and gradient */
-            calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-            /* Obj. func. with delta eps */
-            calculateObjectiveFunction2(i, params[j], &obj_func[6], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-            params[j] = params_aux;
-
-            /* Calculate objective function */
-            for (k = 0; k < faces_connection[j].n; k++) {
-
-                /* Save current face params */
-                params_aux = params[faces_connection[j].faces[k]];
-
-                //---------------------------//
-                /*          delta            */
-                //---------------------------//
-
-                /* Add delta eps params */
-                params[faces_connection[j].faces[k]] = params_delta_eps[faces_connection[j].faces[k]];
-
-                /* Calculate divergent and gradient */
-                calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-                calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-                /* Obj. func. with delta eps */
-                calculateObjectiveFunction2(i, params[j], &obj_func[7 + 6 * k], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-                //---------------------------//
-                /*            A              */
-                //---------------------------//
-
-                /* Add delta eps params */
-                params[faces_connection[j].faces[k]] = params_A_eps[faces_connection[j].faces[k]];
-
-                /* Calculate divergent and gradient */
-                calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-                calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-                /* Obj. func. with delta eps */
-                calculateObjectiveFunction2(i, params[j], &obj_func[7 + 6 * k + 1], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-                //---------------------------//
-                /*            B              */
-                //---------------------------//
-
-                /* Add delta eps params */
-                params[faces_connection[j].faces[k]] = params_B_eps[faces_connection[j].faces[k]];
-
-                /* Calculate divergent and gradient */
-                calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-                calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-                /* Obj. func. with delta eps */
-                calculateObjectiveFunction2(i, params[j], &obj_func[7 + 6 * k + 2], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-                //---------------------------//
-                /*           Psi             */
-                //---------------------------//
-
-                /* Add delta eps params */
-                params[faces_connection[j].faces[k]] = params_Psi_eps[faces_connection[j].faces[k]];
-
-                /* Calculate divergent and gradient */
-                calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-                calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-                /* Obj. func. with delta eps */
-                calculateObjectiveFunction2(i, params[j], &obj_func[7 + 6 * k + 3], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-                //---------------------------//
-                /*          Ctau1            */
-                //---------------------------//
-
-                /* Add delta eps params */
-                params[faces_connection[j].faces[k]] = params_Ctau1_eps[faces_connection[j].faces[k]];
-
-                /* Calculate divergent and gradient */
-                calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-                calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-                /* Obj. func. with delta eps */
-                calculateObjectiveFunction2(i, params[j], &obj_func[7 + 6 * k + 4], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-                //---------------------------//
-                /*          Ctau2            */
-                //---------------------------//
-
-                /* Add delta eps params */
-                params[faces_connection[j].faces[k]] = params_Ctau2_eps[faces_connection[j].faces[k]];
-
-                /* Calculate divergent and gradient */
-                calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-                calculateGradients(j, faces, vertices_connection, params, e1, e2, e3, p1, p2, p3, velNorm, velx, vely, velz, transpiration);
-
-                /* Obj. func. with delta eps */
-                calculateObjectiveFunction2(i, params[j], &obj_func[7 + 6 * k + 5], &max_momentum_x_aux, &max_momentum_y_aux, &max_kinetic_energy_aux, &max_lateral_curvature_aux, &max_shear_stress_x_aux, &max_shear_stress_y_aux, freestreamNorm);
-
-                /* Return to previous params */
-                params[faces_connection[j].faces[k]] = params_aux;
+            for (j = 0; j < vertices_connection[k].n; j++) {
+                
+                delta_v[k] = delta_v[k] + delta_list[vertices_connection[k].faces[j]] * vertices_connection[k].coeffs[j];
+                A_v[k] = A_v[k] + A_list[vertices_connection[k].faces[j]] * vertices_connection[k].coeffs[j];
+                B_v[k] = B_v[k] + B_list[vertices_connection[k].faces[j]] * vertices_connection[k].coeffs[j];
+                Psi_v[k] = Psi_v[k] + Psi_list[vertices_connection[k].faces[j]] * vertices_connection[k].coeffs[j];
+                amp_v[k] = amp_v[k] + amp_list[vertices_connection[k].faces[j]] * vertices_connection[k].coeffs[j];
 
             }
+        
+        }
 
-            /* Calculate obj function gradient */
-            for (k = 0; k < (faces_connection[j].n + 1) * 6; k++) {
-                grad_obj_func[k] = (obj_func[1 + k] - obj_func[0]) / eps;
-            }
-            // printf("%.4e %.4e %.4e %.4e %.4e %.4e\n", grad_obj_func[0], grad_obj_func[1], grad_obj_func[2], grad_obj_func[3], grad_obj_func[4], grad_obj_func[5]);
+        for (k = 0; k < nf; k++) {
 
-            /* Find step */
+            delta_list[k] = (1000 * delta_list[k] + delta_v[faces[3 * k]] + delta_v[faces[3 * k + 1]] + delta_v[faces[3 * k + 2]]) / 1003.0;
+            A_list[k] = (1000 * A_list[k] + A_v[faces[3 * k]] + A_v[faces[3 * k + 1]] + A_v[faces[3 * k + 2]]) / 1003.0;
+            B_list[k] = (1000 * B_list[k] + B_v[faces[3 * k]] + B_v[faces[3 * k + 1]] + B_v[faces[3 * k + 2]]) / 1003.0;
+            Psi_list[k] = (1000 * Psi_list[k] + Psi_v[faces[3 * k]] + Psi_v[faces[3 * k + 1]] + Psi_v[faces[3 * k + 2]]) / 1003.0;
+            amp_list[k] = (1000 * amp_list[k] + amp_v[faces[3 * k]] + amp_v[faces[3 * k + 1]] + amp_v[faces[3 * k + 2]]) / 1003.0;
 
-            /* Increase parameters */
-            norm_delta_list[j] = norm_delta_list[j] - step * grad_obj_func[0];
-            norm_A_list[j] = norm_A_list[j] - step * grad_obj_func[1];
-            norm_B_list[j] = norm_B_list[j] - step * grad_obj_func[2];
-            norm_Psi_list[j] = norm_Psi_list[j] - step * grad_obj_func[3];
-            norm_Ctau1_list[j] = norm_Ctau1_list[j] - step * grad_obj_func[4];
-            norm_Ctau2_list[j] = norm_Ctau2_list[j] - step * grad_obj_func[5];
+        }
 
-            if (norm_delta_list[j] < 0.001) norm_delta_list[j] = 0.001;
-            // if (norm_Ctau1_list[j] < 1e-14) norm_Ctau1_list[j] = 1e-14;
-            // if (norm_Ctau2_list[j] < 1e-14) norm_Ctau2_list[j] = 1e-14;
+        /* Calculate drag */
+        drag.x = 0.0; drag.y = 0.0; drag.z = 0.0;
 
-            for (k = 0; k < faces_connection[j].n; k++) {
-
-                norm_delta_list[faces_connection[j].faces[k]] = norm_delta_list[faces_connection[j].faces[k]] - step * grad_obj_func[6 * (1 + k)];
-                norm_A_list[faces_connection[j].faces[k]] = norm_A_list[faces_connection[j].faces[k]] - step * grad_obj_func[6 * (1 + k) + 1];
-                norm_B_list[faces_connection[j].faces[k]] = norm_B_list[faces_connection[j].faces[k]] - step * grad_obj_func[6 * (1 + k) + 2];
-                norm_Psi_list[faces_connection[j].faces[k]] = norm_Psi_list[faces_connection[j].faces[k]] - step * grad_obj_func[6 * (1 + k) + 3];
-                norm_Ctau1_list[faces_connection[j].faces[k]] = norm_Ctau1_list[faces_connection[j].faces[k]] - step * grad_obj_func[6 * (1 + k) + 4];
-                norm_Ctau2_list[faces_connection[j].faces[k]] = norm_Ctau2_list[faces_connection[j].faces[k]] - step * grad_obj_func[6 * (1 + k) + 5];
-
-                if (norm_delta_list[faces_connection[j].faces[k]] < 0.001) norm_delta_list[faces_connection[j].faces[k]] = 0.001;
-                // if (norm_Ctau1_list[faces_connection[j].faces[k]] < 1e-14) norm_Ctau1_list[faces_connection[j].faces[k]] = 1e-14;
-                // if (norm_Ctau2_list[faces_connection[j].faces[k]] < 1e-14) norm_Ctau2_list[faces_connection[j].faces[k]] = 1e-14;
-
-            }
-            
+        for (j = 0; j < nf; j++) {
+            drag.x = drag.x + facesAreas[j] * (s1[j].x * tau_wall_x[j] + s2[j].x * tau_wall_y[j]);
+            drag.y = drag.y + facesAreas[j] * (s1[j].y * tau_wall_x[j] + s2[j].y * tau_wall_y[j]);
+            drag.z = drag.z + facesAreas[j] * (s1[j].z * tau_wall_x[j] + s2[j].z * tau_wall_y[j]);
         }
 
         /* Print error */
-        if (i < 9) {
-            printf("           %d        %.4e      %.4e       %.4e      %.4e       %.4e      %.4e      %.4e\n", i + 1, max_error, max_momentum_x, max_momentum_y, max_kinetic_energy, max_lateral_curvature, max_shear_stress_x, max_shear_stress_y);
-        } else if ((i > 8) && (i < 99)) {
-            printf("           %d       %.4e      %.4e       %.4e      %.4e       %.4e      %.4e      %.4e\n", i + 1, max_error, max_momentum_x, max_momentum_y, max_kinetic_energy, max_lateral_curvature, max_shear_stress_x, max_shear_stress_y);
-        } else if ((i > 99) && (i < 999)) {
-            printf("           %d      %.4e      %.4e       %.4e      %.4e       %.4e      %.4e      %.4e\n", i + 1, max_error, max_momentum_x, max_momentum_y, max_kinetic_energy, max_lateral_curvature, max_shear_stress_x, max_shear_stress_y);
-        } else {
-            printf("           %d     %.4e      %.4e       %.4e      %.4e       %.4e      %.4e      %.4e\n", i + 1, max_error, max_momentum_x, max_momentum_y, max_kinetic_energy, max_lateral_curvature, max_shear_stress_x, max_shear_stress_y);
-        }
-        // printf("Params.: %.3e %.3e %.3e %.3e %.3e %.3e\n", max_params_values[0], max_params_values[1], max_params_values[2], max_params_values[3], max_params_values[4], max_params_values[5]);
+        printf("    %d    %.5e %.3e %.3e %.3e %.3e %.3e %.3e %.3e\n", i, previousMaxFaceEquations.obj, sqrt((drag.x * drag.x) + (drag.y * drag.y) + (drag.z * drag.z)), previousMaxFaceEquations.momentum_x, previousMaxFaceEquations.momentum_y, previousMaxFaceEquations.kinetic_energy, previousMaxFaceEquations.lateral_curvature, previousMaxFaceEquations.shear_stress_x, previousMaxFaceEquations.shear_stress_y);
 
-        if (max_error < 1e-3)  break;
-        if (obj_func[0] / max_obj_func > 100) break;
+        if (previousMaxFaceEquations.obj < 1e-10) break;
+        if (previousMaxFaceEquations.obj > 1e2) break;
 
-        /* Calculate inviscid parameters */
-        // if (((i + 1) % 5) == 0) {
-        if (i > 3000) {
-
-            /* Params */
-            for (j = 0; j < nf; j++) {
-                freestream.velocity = velNorm[j];
-                freestream.mach = mach[j];
-                calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * norm_A_list[j], norm_B * norm_B_list[j], norm_Psi * norm_Psi_list[j], norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params[j]);
-            }
-
-            /* Divergents */
-            for (j = 0; j < nf; j++) {
-                calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-            }
-
-            /* Transpiration */
-            for (j = 0; j < nf; j++) {
-                transpiration[j] = absValue(params[j].div_M) / density;
-                tau_x[j] = params[j].tau_w_x;
-                tau_y[j] = params[j].tau_w_y;
-            }
-
-            /* Solve linear system with zero transpiration */
-            calculateDoubletDistribution(nf, matrix, array, transpiration, doublet);
-
-            /* Calculate potential surface parameters */
-            calculateSurfaceParameters(nf, matrixVelx, matrixVely, matrixVelz, arrayVel, doublet, freestreamNorm, velx, vely, velz, velNorm, cp, mach, sound_speed);
-        }
-    }
-
-    for (j = 0; j < nf; j++) {
-        freestream.velocity = velNorm[j];
-        freestream.mach = mach[j];
-        calculateEquationsParams(norm_delta * norm_delta_list[j], norm_A * norm_A_list[j], norm_B * norm_B_list[j], norm_Psi * norm_Psi_list[j], norm_Ctau1 * norm_Ctau1_list[j], norm_Ctau2 * norm_Ctau2_list[j], &freestream, &profiles, &integralThickness, &integralDefect, &params[j]);
-    }
-
-    /* Divergents */
-    for (j = 0; j < nf; j++) {
-        calculateDivergents(j, faces, vertices_connection, params, facesArea[j], p1, p2, p3);
-    }
-
-    /* Transpiration */
-    for (j = 0; j < nf; j++) {
-        transpiration[j] = absValue(params[j].div_M) / density;
-        tau_x[j] = params[j].tau_w_x;
-        tau_y[j] = params[j].tau_w_y;
     }
 
     /* Assing values */
     for (i = 0; i < nf; i++) {
-        delta[i] = norm_delta * norm_delta_list[i];
-        A[i] = norm_A * norm_A_list[i];
-        B[i] = norm_B * norm_B_list[i];
-        Psi[i] = norm_Psi * norm_Psi_list[i];
-        Ctau1[i] = norm_Ctau1 * norm_Ctau1_list[i];
-        Ctau2[i] = norm_Ctau2 * norm_Ctau2_list[i];
+        delta[i] = delta_list[i] * delta_norm;
+        A[i] = A_list[i] * A_norm;
+        B[i] = B_list[i] * A_norm;
+        Psi[i] = Psi_list[i] * Psi_norm;
+        Ctau1[i] = pow(10, 1 * amp_list[i]) / sqrt(1.4);
+        Ctau2[i] = Ctau1[i];
     }
 
-    /* Free arrays */
-    free(params);
-    free(params_delta_eps);
-    free(params_A_eps);
-    free(params_B_eps);
-    free(params_Psi_eps);
-    free(params_Ctau1_eps);
-    free(params_Ctau2_eps);
-
-    free(norm_delta_list);
-    free(norm_A_list);
-    free(norm_B_list);
-    free(norm_Psi_list);
-    free(norm_Ctau1_list);
-    free(norm_Ctau2_list);
-
-    free(profiles.eta);
-    free(profiles.U);
-    free(profiles.W);
-    free(profiles.S);
-    free(profiles.T);
-    free(profiles.R);
-    free(profiles.dU_deta);
-    free(profiles.dW_deta);
-
-    free(faces_connection);
-
-    free(obj_func);
-    free(grad_obj_func);
 }
 
 /*
@@ -3152,8 +2041,7 @@ void solve(int type,
            double *A_v, double *B_v,
            double *Psi_v,
            double *Ctau1_v, double *Ctau2_v,
-           double *tau_x_v, double *tau_y_v, double *tau_z_v)
-{
+           double *tau_x_v, double *tau_y_v, double *tau_z_v) {
 
     printf("Aerodynamic solver\n");
 
@@ -3189,31 +2077,32 @@ void solve(int type,
     /* Boundary layer parameters */
     double *tau_wall_x, *tau_wall_y;
     struct VerticeConnection *vertices_connection;
+    struct Point freestream_point;
 
     /* Initialize */
     tau_wall_x = (double *)calloc(nf, sizeof(double));
     tau_wall_y = (double *)calloc(nf, sizeof(double));
     vertices_connection = (struct VerticeConnection *)malloc(nv * sizeof(struct VerticeConnection));
+    freestream_point.x = freestream[0];
+    freestream_point.y = freestream[1];
+    freestream_point.z = freestream[2];
 
     calculateVerticesConnection(nv, nf, vertices, faces, vertices_connection);
 
     if (type == 1)
     {
         printf("  - Boundary layer correction\n");
-        solveBoundaryLayer(nf, nv, vertices_connection, vertices, faces, facesCenter, facesAreas, e1, e2, e3, p1, p2, p3, transpiration, delta, A, B, Psi, Ctau1, Ctau2, tau_wall_x, tau_wall_y, velNorm, velx, vely, velz, mach, density, viscosity, cp, sound_speed, matrix, array, matrixVelx, matrixVely, matrixVelz, arrayVel, doublet, freestreamNorm);
+        solveBoundaryLayer(nf, nv, freestream_point, vertices_connection, vertices, faces, facesCenter, facesAreas, e1, e2, e3, p1, p2, p3, transpiration, delta, A, B, Psi, Ctau1, Ctau2, tau_wall_x, tau_wall_y, velNorm, velx, vely, velz, mach, density, viscosity, cp, matrix, array, matrixVelx, matrixVely, matrixVelz, arrayVel, doublet, freestreamNorm);
         printf("\n");
     }
-
-    /* Find faces and vertices values */
 
     /* Parameters */
     int i, j;
     struct Point e3_point, vel_point, s1, s2;
     double aux;
 
-    // Faces
-    for (i = 0; i < nf; i++)
-    {
+    // Surface shear stress
+    for (i = 0; i < nf; i++) {
 
         e3_point.x = e3[3 * i];
         e3_point.y = e3[3 * i + 1];
@@ -3236,9 +2125,8 @@ void solve(int type,
         tau_z[i] = s1.z * tau_wall_x[i] + s2.z * tau_wall_y[i];
     }
 
-    // Vertices
-    for (i = 0; i < nv; i++)
-    {
+    // Vertices values
+    for (i = 0; i < nv; i++) {
 
         sigma_v[i] = 0.0;
         doublet_v[i] = 0.0;
@@ -3258,8 +2146,7 @@ void solve(int type,
         tau_y_v[i] = 0.0;
         tau_z_v[i] = 0.0;
 
-        for (j = 0; j < vertices_connection[i].n; j++)
-        {
+        for (j = 0; j < vertices_connection[i].n; j++) {
             sigma_v[i] = sigma_v[i] + sigma[vertices_connection[i].faces[j]] * vertices_connection[i].coeffs[j];
             doublet_v[i] = doublet_v[i] + doublet[vertices_connection[i].faces[j]] * vertices_connection[i].coeffs[j];
             cp_v[i] = cp_v[i] + cp[vertices_connection[i].faces[j]] * vertices_connection[i].coeffs[j];
@@ -3278,6 +2165,7 @@ void solve(int type,
             tau_y_v[i] = tau_y_v[i] + tau_y[vertices_connection[i].faces[j]] * vertices_connection[i].coeffs[j];
             tau_z_v[i] = tau_z_v[i] + tau_z[vertices_connection[i].faces[j]] * vertices_connection[i].coeffs[j];
         }
+    
     }
 
     free(matrix);

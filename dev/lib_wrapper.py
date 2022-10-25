@@ -64,7 +64,8 @@ def solve(type: int,
           rightWingFaces: ndarray,
           tailGrid: ndarray,
           tailVertices: ndarray,
-          tailFaces: ndarray) -> List[ndarray]:
+          tailFaces: ndarray,
+          delta: ndarray, A: ndarray, B: ndarray, Psi: ndarray, Ctau1: ndarray, Ctau2: ndarray) -> List[ndarray]:
     
     # Calculated parameters
     nf = facesAreas.size
@@ -107,12 +108,12 @@ def solve(type: int,
     mach = empty(nf, dtype=double)
     transpiration = zeros(nf, dtype=double)
 
-    delta = empty(nf, dtype=double)
-    A = empty(nf, dtype=double)
-    B = empty(nf, dtype=double)
-    Psi = empty(nf, dtype=double)
-    Ctau1 = empty(nf, dtype=double)
-    Ctau2 = empty(nf, dtype=double)
+    # delta = empty(nf, dtype=double)
+    # A = empty(nf, dtype=double)
+    # B = empty(nf, dtype=double)
+    # Psi = empty(nf, dtype=double)
+    # Ctau1 = empty(nf, dtype=double)
+    # Ctau2 = empty(nf, dtype=double)
     tau_x = empty(nf, dtype=double)
     tau_y = empty(nf, dtype=double)
     tau_z = empty(nf, dtype=double)

@@ -33,6 +33,12 @@ if __name__ == '__main__':
     tailGrid = np.loadtxt(path + 'tailGrid.txt', dtype=np.int32)
     tailVertices = np.loadtxt(path + 'tailVertices.txt', dtype=np.double)
     tailFaces = np.loadtxt(path + 'tailFaces.txt', dtype=np.int32)
+    delta = np.loadtxt(path + 'delta.txt', dtype=np.double)
+    A = np.loadtxt(path + 'A.txt', dtype=np.double)
+    B = np.loadtxt(path + 'B.txt', dtype=np.double)
+    Psi = np.loadtxt(path + 'Psi.txt', dtype=np.double)
+    Ctau1 = np.loadtxt(path + 'Ctau1.txt', dtype=np.double)
+    Ctau2 = np.loadtxt(path + 'Ctau2.txt', dtype=np.double)
 
     data = solve(1,
                  vertices,
@@ -46,11 +52,19 @@ if __name__ == '__main__':
                  freestream,
                  leftWingGrid, leftWingVertices, leftWingFaces,
                  rightWingGrid, rightWingVertices, rightWingFaces,
-                 tailGrid, tailVertices, tailFaces)
+                 tailGrid, tailVertices, tailFaces,
+                 delta, A, B, Psi, Ctau1, Ctau2)
     
     facesParams, verticesParams = data
     
-    genVTK('new', './data/vtk/', faces, vertices, verticesParams)
+    np.savetxt(path + 'delta.txt', facesParams.delta)
+    np.savetxt(path + 'A.txt', facesParams.A)
+    np.savetxt(path + 'B.txt', facesParams.B)
+    np.savetxt(path + 'Psi.txt', facesParams.Psi)
+    np.savetxt(path + 'Ctau1.txt', facesParams.Ctau1)
+    np.savetxt(path + 'Ctau2.txt', facesParams.Ctau2)
+    
+    genVTK('new5', './data/vtk/', faces, vertices, verticesParams)
 
     t2 = time()
 

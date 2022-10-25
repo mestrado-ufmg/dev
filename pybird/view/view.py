@@ -1,5 +1,4 @@
 import os
-from numpy import array, zeros
 import vtk
 
 from pybird.mesh.mesh import Mesh
@@ -13,12 +12,15 @@ class View:
         self._solver = solver
         return
     
-    def paraview(self, path: str = '.', showWake: bool = False) -> None:
+    def paraview(self, path: str = '.', wake: bool = False) -> None:
 
         print('- Preparing view')
         
         pd = vtk.vtkPolyData()
 
+        #----------------------------------#
+        #               MESH               #
+        #----------------------------------#
         points = vtk.vtkPoints()
         cells = vtk.vtkCellArray()
 
@@ -34,7 +36,7 @@ class View:
             cells.InsertNextCell(cell)
         
         # Wake
-        if showWake:
+        if wake:
 
             m = len(self._mesh.vertices[:, 0])
             lines = vtk.vtkCellArray()
@@ -84,98 +86,60 @@ class View:
         
         pd.SetPoints(points)
         pd.SetPolys(cells)
-        if showWake: pd.SetLines(lines)
+        if wake: pd.SetLines(lines)
 
-        # Solver
-        if self._solver.sigma is not None:
-            sigma = vtk.vtkFloatArray()
-            sigma.SetName('sigma')
+        #----------------------------------#
+        #             VERTICES             #
+        #----------------------------------#
 
-            doublet = vtk.vtkFloatArray()
-            doublet.SetName('doublet')
+        if self._solver.done:
+            sigma = vtk.vtkFloatArray(); sigma.SetName('sigma')
+            doublet = vtk.vtkFloatArray(); doublet.SetName('doublet')
+            velNorm = vtk.vtkFloatArray(); velNorm.SetName('velNorm')
+            velField = vtk.vtkFloatArray(); velField.SetNumberOfComponents(3); velField.SetName('velField')
+            cp = vtk.vtkFloatArray(); cp.SetName('cp')
+            transpiration = vtk.vtkFloatArray(); transpiration.SetName('transpiration')
+            delta = vtk.vtkFloatArray(); delta.SetName('delta')
+            A = vtk.vtkFloatArray(); A.SetName('A')
+            B = vtk.vtkFloatArray(); B.SetName('B')
+            Psi = vtk.vtkFloatArray(); Psi.SetName('Psi')
+            Ctau1 = vtk.vtkFloatArray(); Ctau1.SetName('Ctau1')
+            Ctau2 = vtk.vtkFloatArray(); Ctau2.SetName('Ctau2')
+            tauWall = vtk.vtkFloatArray(); tauWall.SetNumberOfComponents(3); tauWall.SetName('tauWall')
+            amplification = vtk.vtkFloatArray(); amplification.SetName('amplification')
 
-            velNorm = vtk.vtkFloatArray()
-            velNorm.SetName('velNorm')
+            for i in range(self._solver.verticesParams.sigma.shape[0]):
+                sigma.InsertNextTuple1(self._solver.verticesParams.sigma[i])
+                doublet.InsertNextTuple1(self._solver.verticesParams.doublet[i])
+                velNorm.InsertNextTuple1(self._solver.verticesParams.vel_norm[i])
+                velField.InsertNextTuple3(self._solver.verticesParams.vel_field[i, 0], self._solver.verticesParams.vel_field[i, 1], self._solver.verticesParams.vel_field[i, 2])
+                cp.InsertNextTuple1(self._solver.verticesParams.cp[i])
+                transpiration.InsertNextTuple1(self._solver.verticesParams.transpiration[i])
+                delta.InsertNextTuple1(self._solver.verticesParams.delta[i])
+                A.InsertNextTuple1(self._solver.verticesParams.A[i])
+                B.InsertNextTuple1(self._solver.verticesParams.B[i])
+                Psi.InsertNextTuple1(self._solver.verticesParams.Psi[i])
+                Ctau1.InsertNextTuple1(self._solver.verticesParams.Ctau1[i])
+                Ctau2.InsertNextTuple1(self._solver.verticesParams.Ctau2[i])
+                tauWall.InsertNextTuple3(self._solver.verticesParams.tau_wall[i, 0], self._solver.verticesParams.tau_wall[i, 1], self._solver.verticesParams.tau_wall[i, 2])
+                amplification.InsertNextTuple1((self._solver.verticesParams.Ctau1[i] ** 2 + self._solver.verticesParams.Ctau2[i] ** 2) ** 0.5)
 
-            velField = vtk.vtkFloatArray()
-            velField.SetNumberOfComponents(3)
-            velField.SetName('velField')
-
-            cp = vtk.vtkFloatArray()
-            cp.SetName('cp')
-
-            transpiration = vtk.vtkFloatArray()
-            transpiration.SetName('transpiration')
-
-            n = len(self._mesh.vertices[:, 0])
-            sigmaVerticesValues = zeros(n)
-            doubletVerticesValues = zeros(n)
-            velNormVerticesValues = zeros(n)
-            velFieldVerticesValues = zeros((n, 3))
-            cpVerticesValues = zeros(n)
-            transpirationVerticesValues = zeros(n)
-            nVerticesValues = zeros(n)
-            
-
-            for i in range(len(self._mesh.faces[:, 0])):
-                sigmaVerticesValues[self._mesh.faces[i, 0]] = sigmaVerticesValues[self._mesh.faces[i, 0]] + self._solver.sigma[i]
-                sigmaVerticesValues[self._mesh.faces[i, 1]] = sigmaVerticesValues[self._mesh.faces[i, 1]] + self._solver.sigma[i]
-                sigmaVerticesValues[self._mesh.faces[i, 2]] = sigmaVerticesValues[self._mesh.faces[i, 2]] + self._solver.sigma[i]
-                
-                doubletVerticesValues[self._mesh.faces[i, 0]] = doubletVerticesValues[self._mesh.faces[i, 0]] + self._solver.doublet[i]
-                doubletVerticesValues[self._mesh.faces[i, 1]] = doubletVerticesValues[self._mesh.faces[i, 1]] + self._solver.doublet[i]
-                doubletVerticesValues[self._mesh.faces[i, 2]] = doubletVerticesValues[self._mesh.faces[i, 2]] + self._solver.doublet[i]
-                
-                velNormVerticesValues[self._mesh.faces[i, 0]] = velNormVerticesValues[self._mesh.faces[i, 0]] + self._solver.velNorm[i]
-                velNormVerticesValues[self._mesh.faces[i, 1]] = velNormVerticesValues[self._mesh.faces[i, 1]] + self._solver.velNorm[i]
-                velNormVerticesValues[self._mesh.faces[i, 2]] = velNormVerticesValues[self._mesh.faces[i, 2]] + self._solver.velNorm[i]
-
-                velFieldVerticesValues[self._mesh.faces[i, 0], 0] = velFieldVerticesValues[self._mesh.faces[i, 0], 0] + self._solver.velField[i, 0]
-                velFieldVerticesValues[self._mesh.faces[i, 1], 0] = velFieldVerticesValues[self._mesh.faces[i, 1], 0] + self._solver.velField[i, 0]
-                velFieldVerticesValues[self._mesh.faces[i, 2], 0] = velFieldVerticesValues[self._mesh.faces[i, 2], 0] + self._solver.velField[i, 0]
-                velFieldVerticesValues[self._mesh.faces[i, 0], 1] = velFieldVerticesValues[self._mesh.faces[i, 0], 1] + self._solver.velField[i, 1]
-                velFieldVerticesValues[self._mesh.faces[i, 1], 1] = velFieldVerticesValues[self._mesh.faces[i, 1], 1] + self._solver.velField[i, 1]
-                velFieldVerticesValues[self._mesh.faces[i, 2], 1] = velFieldVerticesValues[self._mesh.faces[i, 2], 1] + self._solver.velField[i, 1]
-                velFieldVerticesValues[self._mesh.faces[i, 0], 2] = velFieldVerticesValues[self._mesh.faces[i, 0], 2] + self._solver.velField[i, 2]
-                velFieldVerticesValues[self._mesh.faces[i, 1], 2] = velFieldVerticesValues[self._mesh.faces[i, 1], 2] + self._solver.velField[i, 2]
-                velFieldVerticesValues[self._mesh.faces[i, 2], 2] = velFieldVerticesValues[self._mesh.faces[i, 2], 2] + self._solver.velField[i, 2]
-
-                cpVerticesValues[self._mesh.faces[i, 0]] = cpVerticesValues[self._mesh.faces[i, 0]] + self._solver.cp[i]
-                cpVerticesValues[self._mesh.faces[i, 1]] = cpVerticesValues[self._mesh.faces[i, 1]] + self._solver.cp[i]
-                cpVerticesValues[self._mesh.faces[i, 2]] = cpVerticesValues[self._mesh.faces[i, 2]] + self._solver.cp[i]
-
-                nVel = self._solver.velField[i, 0] * self._mesh.e3[i, 0] + self._solver.velField[i, 1] * self._mesh.e3[i, 1] + self._solver.velField[i, 2] * self._mesh.e3[i, 2]
-                transpirationVerticesValues[self._mesh.faces[i, 0]] = transpirationVerticesValues[self._mesh.faces[i, 0]] + nVel
-                transpirationVerticesValues[self._mesh.faces[i, 1]] = transpirationVerticesValues[self._mesh.faces[i, 1]] + nVel
-                transpirationVerticesValues[self._mesh.faces[i, 2]] = transpirationVerticesValues[self._mesh.faces[i, 2]] + nVel
-
-                nVerticesValues[self._mesh.faces[i, 0]] = nVerticesValues[self._mesh.faces[i, 0]] + 1
-                nVerticesValues[self._mesh.faces[i, 1]] = nVerticesValues[self._mesh.faces[i, 1]] + 1
-                nVerticesValues[self._mesh.faces[i, 2]] = nVerticesValues[self._mesh.faces[i, 2]] + 1
-            
-            sigmaValues = sigmaVerticesValues / (nVerticesValues + 1e-8)
-            doubletValues = doubletVerticesValues / (nVerticesValues + 1e-8)
-            velNormValues = velNormVerticesValues / (nVerticesValues + 1e-8)
-            velxFieldValues = velFieldVerticesValues[:, 0] / (nVerticesValues + 1e-8)
-            velyFieldValues = velFieldVerticesValues[:, 1] / (nVerticesValues + 1e-8)
-            velzFieldValues = velFieldVerticesValues[:, 2] / (nVerticesValues + 1e-8)
-            cpValues = cpVerticesValues / (nVerticesValues + 1e-8)
-            transpirationValues = transpirationVerticesValues / (nVerticesValues + 1e-8)
-
-            for i in range(n):
-                sigma.InsertNextTuple1(sigmaValues[i])
-                doublet.InsertNextTuple1(doubletValues[i])
-                velNorm.InsertNextTuple1(velNormValues[i])
-                velField.InsertNextTuple3(velxFieldValues[i], velyFieldValues[i], velzFieldValues[i])
-                cp.InsertNextTuple1(cpValues[i])
-                transpiration.InsertNextTuple1(transpirationValues[i])
-
+            pd.SetPoints(points)
+            pd.SetPolys(cells)
             pd.GetPointData().AddArray(sigma)
             pd.GetPointData().AddArray(doublet)
             pd.GetPointData().AddArray(velNorm)
             pd.GetPointData().AddArray(velField)
             pd.GetPointData().AddArray(cp)
             pd.GetPointData().AddArray(transpiration)
+            pd.GetPointData().AddArray(delta)
+            pd.GetPointData().AddArray(A)
+            pd.GetPointData().AddArray(B)
+            pd.GetPointData().AddArray(Psi)
+            pd.GetPointData().AddArray(Ctau1)
+            pd.GetPointData().AddArray(Ctau2)
+            pd.GetPointData().AddArray(tauWall)
+            pd.GetPointData().AddArray(amplification)
 
         writer = vtk.vtkXMLPolyDataWriter()
         writer.SetFileName(path + '/{}.vtp'.format(self._name))
